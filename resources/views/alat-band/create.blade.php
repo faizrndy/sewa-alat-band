@@ -9,7 +9,7 @@
     <h2 class="text-3xl font-bold text-gray-800 mb-6">Tambah Alat Band Baru</h2>
 
     <div class="bg-white rounded-lg shadow-md p-6">
-        <form action="{{ route('alat-band.store') }}" method="POST">
+        <form action="{{ route('alat-band.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="mb-4">
@@ -42,18 +42,6 @@
             </div>
 
             <div class="mb-4">
-                <label for="jenis" class="block text-gray-700 font-medium mb-2">Jenis</label>
-                <select id="jenis" name="jenis"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('jenis') border-red-500 @enderror"
-                    required>
-                    <option value="">Pilih Kategori Terlebih Dahulu</option>
-                </select>
-                @error('jenis')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="mb-4">
                 <label for="stok" class="block text-gray-700 font-medium mb-2">Stok</label>
                 <input type="number" id="stok" name="stok" value="{{ old('stok', 1) }}"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('stok') border-red-500 @enderror"
@@ -73,6 +61,25 @@
                 @enderror
             </div>
 
+            <div class="mb-4">
+                <label for="gambar" class="block text-gray-700 font-medium mb-2">Gambar</label>
+                <div class="relative">
+                    <input type="file" id="gambar" name="gambar" accept="image/*"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('gambar') border-red-500 @enderror"
+                        onchange="previewImage(event)">
+                </div>
+                <small class="text-gray-600 mt-1 block">Format: JPG, PNG, GIF. Ukuran maksimal: 2MB</small>
+                @error('gambar')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+
+                <!-- Preview Gambar -->
+                <div id="preview-container" class="mt-4 hidden">
+                    <p class="text-gray-700 font-medium mb-2">Pratinjau:</p>
+                    <img id="preview-image" src="" alt="Preview" class="max-w-xs h-auto border rounded-lg">
+                </div>
+            </div>
+
             <div class="mb-6">
                 <label for="status" class="block text-gray-700 font-medium mb-2">Status</label>
                 <select id="status" name="status"
@@ -80,7 +87,8 @@
                     required>
                     <option value="Tersedia" {{ old('status', 'Tersedia') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
                     <option value="Disewa" {{ old('status') == 'Disewa' ? 'selected' : '' }}>Disewa</option>
-                    <option value="Dalam Perbaikan" {{ old('status') == 'Dalam Perbaikan' ? 'selected' : '' }}>Dalam Perbaikan</option> </select>
+                    <option value="Dalam Perbaikan" {{ old('status') == 'Dalam Perbaikan' ? 'selected' : '' }}>Dalam Perbaikan</option>
+                </select>
                 @error('status')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -106,7 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const kategoriSelect = document.getElementById('kategori');
     const jenisSelect = document.getElementById('jenis');
 
-    // DATA BARU: Daftar jenis alat musik yang lebih lengkap
     const jenisMapping = {
         'Gitar': [
             'Gitar Elektrik',
@@ -186,5 +193,23 @@ document.addEventListener('DOMContentLoaded', function () {
     kategoriSelect.addEventListener('change', updateJenisOptions);
     updateJenisOptions();
 });
+
+// Fungsi untuk preview gambar
+function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.classList.add('hidden');
+    }
+}
 </script>
 @endpush

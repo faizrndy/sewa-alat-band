@@ -8,7 +8,7 @@
     <h2 class="text-3xl font-bold text-gray-800 mb-6">Edit Alat Band</h2>
 
     <div class="bg-white rounded-lg shadow-md p-6">
-        <form action="{{ route('alat-band.update', $alat['id']) }}" method="POST">
+        <form action="{{ route('alat-band.update', $alat['id']) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -43,20 +43,7 @@
                 @enderror
             </div>
 
-            <!-- BARU: Field Jenis -->
-            <div class="mb-4">
-                <label for="jenis" class="block text-gray-700 font-medium mb-2">Jenis</label>
-                <select id="jenis" name="jenis"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('jenis') border-red-500 @enderror"
-                    required>
-                    <option value="">Pilih Kategori Terlebih Dahulu</option>
-                </select>
-                @error('jenis')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- BARU: Field Stok -->
+            <!-- Stok -->
             <div class="mb-4">
                 <label for="stok" class="block text-gray-700 font-medium mb-2">Stok</label>
                 <input type="number" id="stok" name="stok" value="{{ old('stok', $alat['stok'] ?? 1) }}"
@@ -78,7 +65,36 @@
                 @enderror
             </div>
 
-            <!-- Status (DIPERBARUI) -->
+            <!-- Gambar -->
+            <div class="mb-4">
+                <label for="gambar" class="block text-gray-700 font-medium mb-2">Gambar</label>
+
+                <!-- Tampilkan gambar lama jika ada -->
+                @if(!empty($alat['gambar']) && file_exists(public_path($alat['gambar'])))
+                    <div class="mb-3">
+                        <p class="text-gray-600 text-sm mb-2">Gambar Saat Ini:</p>
+                        <img src="{{ asset($alat['gambar']) }}" alt="{{ $alat['nama_alat'] }}" class="max-w-xs h-auto border rounded-lg">
+                    </div>
+                @endif
+
+                <div class="relative">
+                    <input type="file" id="gambar" name="gambar" accept="image/*"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('gambar') border-red-500 @enderror"
+                        onchange="previewImage(event)">
+                </div>
+                <small class="text-gray-600 mt-1 block">Format: JPG, PNG, GIF. Ukuran maksimal: 2MB (Kosongkan jika tidak ingin mengubah)</small>
+                @error('gambar')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+
+                <!-- Preview Gambar Baru -->
+                <div id="preview-container" class="mt-4 hidden">
+                    <p class="text-gray-700 font-medium mb-2">Pratinjau Gambar Baru:</p>
+                    <img id="preview-image" src="" alt="Preview" class="max-w-xs h-auto border rounded-lg">
+                </div>
+            </div>
+
+            <!-- Status -->
             <div class="mb-6">
                 <label for="status" class="block text-gray-700 font-medium mb-2">Status</label>
                 <select id="status" name="status"
@@ -108,57 +124,22 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const kategoriSelect = document.getElementById('kategori');
-    const jenisSelect = document.getElementById('jenis');
+// Fungsi untuk preview gambar
+function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
 
-    const jenisMapping = {
-        'Gitar': ['Gitar Elektrik Stratocaster', 'Gitar Elektrik Telecaster', 'Gitar Elektrik Les Paul', 'Gitar Akustik Dreadnought', 'Gitar Akustik Jumbo', 'Gitar Akustik-Elektrik'],
-        'Bass': ['Bass Elektrik 4-Senar (Jazz Bass)', 'Bass Elektrik 4-Senar (Precision Bass)', 'Bass Elektrik 5-Senar', 'Bass Akustik'],
-        'Drum': ['Drum Akustik Set (Standard)', 'Drum Elektrik Set', 'Cajon', 'Cymbal Set (Hi-hat, Crash, Ride)'],
-        'Keyboard': ['Piano Digital (88 Keys)', 'Synthesizer', 'Workstation Keyboard', 'MIDI Controller'],
-        'Amplifier': ['Ampli Gitar Combo', 'Ampli Gitar Head Cabinet', 'Ampli Bass Combo', 'Ampli Bass Head Cabinet'],
-        'Microphone': ['Mic Vokal (Kabel)', 'Mic Instrumen (Kabel)', 'Mic Wireless (Handheld)', 'Mic Wireless (Clip-On)'],
-        'Lainnya': ['Sound System (Speaker Aktif + Mixer)', 'Monitor Panggung', 'Stand Mic', 'Stand Keyboard', 'Stand Gitar', 'Kabel Jack & XLR', 'DI Box']
-    };
-
-    // Ambil nilai 'jenis' yang sekarang dari data controller
-    const currentJenis = "{{ old('jenis', $alat['jenis'] ?? '') }}";
-
-    function updateJenisOptions() {
-        const selectedKategori = kategoriSelect.value;
-        jenisSelect.innerHTML = '';
-
-        if (selectedKategori && jenisMapping[selectedKategori]) {
-            let defaultOption = document.createElement('option');
-            defaultOption.value = "";
-            defaultOption.textContent = "Pilih Jenis";
-            jenisSelect.appendChild(defaultOption);
-
-            jenisMapping[selectedKategori].forEach(function(jenis) {
-                const option = document.createElement('option');
-                option.value = jenis;
-                option.textContent = jenis;
-                // Pilih opsi yang sesuai dengan data yang ada
-                if (jenis === currentJenis) {
-                    option.selected = true;
-                }
-                jenisSelect.appendChild(option);
-            });
-            jenisSelect.disabled = false;
-        } else {
-            let disabledOption = document.createElement('option');
-            disabledOption.textContent = "Pilih Kategori Terlebih Dahulu";
-            disabledOption.value = "";
-            jenisSelect.appendChild(disabledOption);
-            jenisSelect.disabled = true;
-        }
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.classList.add('hidden');
     }
-
-    kategoriSelect.addEventListener('change', updateJenisOptions);
-
-    // Panggil fungsi ini saat halaman dimuat agar dropdown 'jenis' langsung terisi
-    updateJenisOptions();
-});
+}
 </script>
 @endpush

@@ -12,9 +12,8 @@ class AlatBandController extends Controller
         $totalAlat = count($alatBand);
         $totalTersedia = count(array_filter($alatBand, fn($alat) => $alat['status'] == 'Tersedia'));
         $totalDisewa = count(array_filter($alatBand, fn($alat) => $alat['status'] == 'Disewa'));
-        $totalPerbaikan = count(array_filter($alatBand, fn($alat) => $alat['status'] == 'Dalam Perbaikan')); // <-- BARIS BARU
+        $totalPerbaikan = count(array_filter($alatBand, fn($alat) => $alat['status'] == 'Dalam Perbaikan'));
 
-        // TAMBAHKAN $totalPerbaikan ke compact()
         return view('dashboard', compact('totalAlat', 'totalTersedia', 'totalDisewa', 'totalPerbaikan'));
     }
 
@@ -37,23 +36,37 @@ class AlatBandController extends Controller
         $request->validate([
             'nama_alat' => 'required|string|max:255',
             'kategori' => 'required|string',
-            'jenis' => 'required|string',
             'stok' => 'required|integer|min:0',
             'harga_sewa' => 'required|numeric|min:0',
-            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan', // <-- UBAH BARIS INI
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
         $alatBand = session('alat_band', []);
-
         $newId = empty($alatBand) ? 1 : max(array_keys($alatBand)) + 1;
+
+        // Handle file upload
+        $gambarPath = null;
+        if ($request->hasFile('gambar')) {
+            $file = $request->file('gambar');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Buat folder jika belum ada
+            if (!file_exists(public_path('images/alat-band'))) {
+                mkdir(public_path('images/alat-band'), 0755, true);
+            }
+
+            $file->move(public_path('images/alat-band'), $filename);
+            $gambarPath = 'images/alat-band/' . $filename;
+        }
 
         $alatBand[$newId] = [
             'id' => $newId,
             'nama_alat' => $request->nama_alat,
             'kategori' => $request->kategori,
-            'jenis' => $request->jenis,
             'stok' => $request->stok,
             'harga_sewa' => $request->harga_sewa,
+            'gambar' => $gambarPath,
             'status' => $request->status,
             'created_at' => now()->format('Y-m-d H:i:s'),
         ];
@@ -92,10 +105,10 @@ class AlatBandController extends Controller
         $request->validate([
             'nama_alat' => 'required|string|max:255',
             'kategori' => 'required|string',
-            'jenis' => 'required|string',
             'stok' => 'required|integer|min:0',
             'harga_sewa' => 'required|numeric|min:0',
-            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan', // <-- UBAH BARIS INI
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
         $alatBand = session('alat_band', []);
@@ -104,9 +117,27 @@ class AlatBandController extends Controller
             return redirect()->route('alat-band.index')->with('error', 'Data tidak ditemukan!');
         }
 
+        // Handle file upload
+        if ($request->hasFile('gambar')) {
+            // Hapus gambar lama jika ada
+            if (!empty($alatBand[$id]['gambar']) && file_exists(public_path($alatBand[$id]['gambar']))) {
+                unlink(public_path($alatBand[$id]['gambar']));
+            }
+
+            $file = $request->file('gambar');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Buat folder jika belum ada
+            if (!file_exists(public_path('images/alat-band'))) {
+                mkdir(public_path('images/alat-band'), 0755, true);
+            }
+
+            $file->move(public_path('images/alat-band'), $filename);
+            $alatBand[$id]['gambar'] = 'images/alat-band/' . $filename;
+        }
+
         $alatBand[$id]['nama_alat'] = $request->nama_alat;
         $alatBand[$id]['kategori'] = $request->kategori;
-        $alatBand[$id]['jenis'] = $request->jenis;
         $alatBand[$id]['stok'] = $request->stok;
         $alatBand[$id]['harga_sewa'] = $request->harga_sewa;
         $alatBand[$id]['status'] = $request->status;
@@ -124,6 +155,11 @@ class AlatBandController extends Controller
             return redirect()->route('alat-band.index')->with('error', 'Data tidak ditemukan!');
         }
 
+        // Hapus gambar jika ada
+        if (!empty($alatBand[$id]['gambar']) && file_exists(public_path($alatBand[$id]['gambar']))) {
+            unlink(public_path($alatBand[$id]['gambar']));
+        }
+
         unset($alatBand[$id]);
         session(['alat_band' => $alatBand]);
 
@@ -137,9 +173,9 @@ class AlatBandController extends Controller
                 'id' => 1,
                 'nama_alat' => 'Gitar Elektrik Fender',
                 'kategori' => 'Gitar',
-                'jenis' => 'Gitar Elektrik Stratocaster',
                 'stok' => 5,
                 'harga_sewa' => 150000,
+                'gambar' => null,
                 'status' => 'Tersedia',
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ],
@@ -147,9 +183,9 @@ class AlatBandController extends Controller
                 'id' => 2,
                 'nama_alat' => 'Drum Set Pearl',
                 'kategori' => 'Drum',
-                'jenis' => 'Drum Akustik Set',
                 'stok' => 2,
                 'harga_sewa' => 300000,
+                'gambar' => null,
                 'status' => 'Disewa',
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ],
@@ -157,10 +193,10 @@ class AlatBandController extends Controller
                 'id' => 3,
                 'nama_alat' => 'Bass Ibanez',
                 'kategori' => 'Bass',
-                'jenis' => 'Bass Elektrik 4-Senar',
                 'stok' => 3,
                 'harga_sewa' => 120000,
-                'status' => 'Dalam Perbaikan', // <-- UBAH UNTUK CONTOH
+                'gambar' => null,
+                'status' => 'Dalam Perbaikan',
                 'created_at' => now()->format('Y-m-d H:i:s'),
             ],
         ];
