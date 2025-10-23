@@ -109,12 +109,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // DATA BARU: Daftar jenis alat musik yang lebih lengkap
     const jenisMapping = {
         'Gitar': [
-            'Gitar Elektrik Stratocaster',
-            'Gitar Elektrik Telecaster',
-            'Gitar Elektrik Les Paul',
-            'Gitar Akustik Dreadnought',
-            'Gitar Akustik Jumbo',
-            'Gitar Akustik-Elektrik'
+            'Gitar Elektrik',
+            'Gitar Akustik',
         ],
         'Bass': [
             'Bass Elektrik 4-Senar (Jazz Bass)',
@@ -125,8 +121,6 @@ document.addEventListener('DOMContentLoaded', function () {
         'Drum': [
             'Drum Akustik Set (Standard)',
             'Drum Elektrik Set',
-            'Cajon',
-            'Cymbal Set (Hi-hat, Crash, Ride)'
         ],
         'Keyboard': [
             'Piano Digital (88 Keys)',
