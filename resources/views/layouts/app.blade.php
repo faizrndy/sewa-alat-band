@@ -56,14 +56,26 @@
 
             <!-- Footer Sidebar -->
             <div class="p-4 border-t border-blue-700">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <span class="text-lg font-bold">A</span>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <span class="text-lg font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-medium">{{ auth()->user()->name ?? 'Guest' }}</p>
+                            <p class="text-xs text-blue-300">Administrator</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <p class="font-medium">Admin</p>
-                        <p class="text-xs text-blue-300">Administrator</p>
-                    </div>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" title="Logout" class="text-red-300 hover:text-red-500 ml-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
+                            </svg>
+                        </button>
+                    </form>
                 </div>
             </div>
         </aside>
