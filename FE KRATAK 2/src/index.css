@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: kamu bisa tambahkan style custom di bawah sini */
+body {
+  @apply bg-gray-50 text-gray-900;
+}

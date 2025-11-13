@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AlatBand extends Model
 {
+    use HasFactory;
+
+    // Pastikan ini sesuai dengan nama tabel di database
     protected $table = 'alat_bands';
 
     protected $fillable = [
@@ -13,11 +17,8 @@ class AlatBand extends Model
         'kategori',
         'stok',
         'harga_sewa',
+        'deskripsi',
         'gambar',
         'status',
-    ];
-
-    protected $casts = [
-        'harga_sewa' => 'decimal:2',
     ];
 }

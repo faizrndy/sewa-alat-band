@@ -12,6 +12,7 @@
         <form action="{{ route('alat-band.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
+            {{-- Nama Alat --}}
             <div class="mb-4">
                 <label for="nama_alat" class="block text-gray-700 font-medium mb-2">Nama Alat</label>
                 <input type="text" id="nama_alat" name="nama_alat" value="{{ old('nama_alat') }}"
@@ -22,6 +23,7 @@
                 @enderror
             </div>
 
+            {{-- Kategori --}}
             <div class="mb-4">
                 <label for="kategori" class="block text-gray-700 font-medium mb-2">Kategori</label>
                 <select id="kategori" name="kategori"
@@ -41,6 +43,7 @@
                 @enderror
             </div>
 
+            {{-- Stok --}}
             <div class="mb-4">
                 <label for="stok" class="block text-gray-700 font-medium mb-2">Stok</label>
                 <input type="number" id="stok" name="stok" value="{{ old('stok', 1) }}"
@@ -51,6 +54,7 @@
                 @enderror
             </div>
 
+            {{-- Harga Sewa --}}
             <div class="mb-4">
                 <label for="harga_sewa" class="block text-gray-700 font-medium mb-2">Harga Sewa per Hari (Rp)</label>
                 <input type="number" id="harga_sewa" name="harga_sewa" value="{{ old('harga_sewa') }}"
@@ -61,6 +65,18 @@
                 @enderror
             </div>
 
+            {{-- Deskripsi --}}
+            <div class="mb-4">
+                <label for="deskripsi" class="block text-gray-700 font-medium mb-2">Deskripsi Alat</label>
+                <textarea id="deskripsi" name="deskripsi" rows="4"
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('deskripsi') border-red-500 @enderror"
+                    placeholder="Tuliskan detail alat, kondisi, atau fitur uniknya...">{{ old('deskripsi') }}</textarea>
+                @error('deskripsi')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Upload Gambar --}}
             <div class="mb-4">
                 <label for="gambar" class="block text-gray-700 font-medium mb-2">Gambar</label>
                 <div class="relative">
@@ -73,13 +89,13 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
 
-                <!-- Preview Gambar -->
                 <div id="preview-container" class="mt-4 hidden">
                     <p class="text-gray-700 font-medium mb-2">Pratinjau:</p>
                     <img id="preview-image" src="" alt="Preview" class="max-w-xs h-auto border rounded-lg">
                 </div>
             </div>
 
+            {{-- Status --}}
             <div class="mb-6">
                 <label for="status" class="block text-gray-700 font-medium mb-2">Status</label>
                 <select id="status" name="status"
@@ -94,6 +110,7 @@
                 @enderror
             </div>
 
+            {{-- Tombol --}}
             <div class="flex space-x-4">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
                     Simpan
@@ -105,96 +122,11 @@
         </form>
     </div>
 </div>
-
 @endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const kategoriSelect = document.getElementById('kategori');
-    const jenisSelect = document.getElementById('jenis');
-
-    const jenisMapping = {
-        'Gitar': [
-            'Gitar Elektrik',
-            'Gitar Akustik',
-        ],
-        'Bass': [
-            'Bass Elektrik 4-Senar (Jazz Bass)',
-            'Bass Elektrik 4-Senar (Precision Bass)',
-            'Bass Elektrik 5-Senar',
-            'Bass Akustik'
-        ],
-        'Drum': [
-            'Drum Akustik Set (Standard)',
-            'Drum Elektrik Set',
-        ],
-        'Keyboard': [
-            'Piano Digital (88 Keys)',
-            'Synthesizer',
-            'Workstation Keyboard',
-            'MIDI Controller'
-        ],
-        'Amplifier': [
-            'Ampli Gitar Combo',
-            'Ampli Gitar Head Cabinet',
-            'Ampli Bass Combo',
-            'Ampli Bass Head Cabinet'
-        ],
-        'Microphone': [
-            'Mic Vokal (Kabel)',
-            'Mic Instrumen (Kabel)',
-            'Mic Wireless (Handheld)',
-            'Mic Wireless (Clip-On)'
-        ],
-        'Lainnya': [
-            'Sound System (Speaker Aktif + Mixer)',
-            'Monitor Panggung',
-            'Stand Mic',
-            'Stand Keyboard',
-            'Stand Gitar',
-            'Kabel Jack & XLR',
-            'DI Box'
-        ]
-    };
-
-    const oldJenis = "{{ old('jenis') }}";
-
-    function updateJenisOptions() {
-        const selectedKategori = kategoriSelect.value;
-
-        jenisSelect.innerHTML = '';
-
-        if (selectedKategori && jenisMapping[selectedKategori]) {
-            let defaultOption = document.createElement('option');
-            defaultOption.value = "";
-            defaultOption.textContent = "Pilih Jenis";
-            jenisSelect.appendChild(defaultOption);
-
-            jenisMapping[selectedKategori].forEach(function(jenis) {
-                const option = document.createElement('option');
-                option.value = jenis;
-                option.textContent = jenis;
-                if (jenis === oldJenis) {
-                    option.selected = true;
-                }
-                jenisSelect.appendChild(option);
-            });
-            jenisSelect.disabled = false;
-        } else {
-            let disabledOption = document.createElement('option');
-            disabledOption.textContent = "Pilih Kategori Terlebih Dahulu";
-            disabledOption.value = "";
-            jenisSelect.appendChild(disabledOption);
-            jenisSelect.disabled = true;
-        }
-    }
-
-    kategoriSelect.addEventListener('change', updateJenisOptions);
-    updateJenisOptions();
-});
-
-// Fungsi untuk preview gambar
+// Preview Gambar
 function previewImage(event) {
     const file = event.target.files[0];
     const previewContainer = document.getElementById('preview-container');

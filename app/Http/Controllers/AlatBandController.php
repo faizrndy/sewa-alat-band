@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 class AlatBandController extends Controller
 {
+    // 🔹 DASHBOARD
     public function dashboard()
     {
         $totalAlat = AlatBand::count();
@@ -17,36 +18,39 @@ class AlatBandController extends Controller
         return view('dashboard', compact('totalAlat', 'totalTersedia', 'totalDisewa', 'totalPerbaikan'));
     }
 
+    // 🔹 INDEX ADMIN
     public function index()
     {
         $alatBand = AlatBand::all();
         return view('alat-band.index', compact('alatBand'));
     }
 
+    // 🔹 CREATE FORM
     public function create()
     {
         return view('alat-band.create');
     }
 
+    // 🔹 STORE DATA
     public function store(Request $request)
     {
         $request->validate([
-            'nama_alat' => 'required|string|max:255',
-            'kategori' => 'required|string',
-            'stok' => 'required|integer|min:0',
-            'harga_sewa' => 'required|numeric|min:0',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
+            'nama_alat'   => 'required|string|max:255',
+            'kategori'    => 'required|string',
+            'stok'        => 'required|integer|min:0',
+            'harga_sewa'  => 'required|numeric|min:0',
+            'deskripsi'   => 'nullable|string',
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status'      => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
         $data = $request->all();
 
-        // Handle file upload
+        // Upload gambar jika ada
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-            // Buat folder jika belum ada
             if (!file_exists(public_path('images/alat-band'))) {
                 mkdir(public_path('images/alat-band'), 0755, true);
             }
@@ -60,35 +64,39 @@ class AlatBandController extends Controller
         return redirect()->route('alat-band.index')->with('success', 'Alat band berhasil ditambahkan!');
     }
 
+    // 🔹 SHOW DETAIL (VIEW ADMIN)
     public function show($id)
     {
         $alat = AlatBand::findOrFail($id);
         return view('alat-band.show', compact('alat'));
     }
 
+    // 🔹 EDIT FORM
     public function edit($id)
     {
         $alat = AlatBand::findOrFail($id);
         return view('alat-band.edit', compact('alat'));
     }
 
+    // 🔹 UPDATE DATA
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_alat' => 'required|string|max:255',
-            'kategori' => 'required|string',
-            'stok' => 'required|integer|min:0',
-            'harga_sewa' => 'required|numeric|min:0',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
+            'nama_alat'   => 'required|string|max:255',
+            'kategori'    => 'required|string',
+            'stok'        => 'required|integer|min:0',
+            'harga_sewa'  => 'required|numeric|min:0',
+            'deskripsi'   => 'nullable|string', // ✅ Tambahkan validasi deskripsi
+            'gambar'      => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status'      => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
         $alat = AlatBand::findOrFail($id);
         $data = $request->all();
 
-        // Handle file upload
+        // Upload gambar baru jika ada
         if ($request->hasFile('gambar')) {
-            // Hapus gambar lama jika ada
+            // Hapus gambar lama
             if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
                 unlink(public_path($alat->gambar));
             }
@@ -96,7 +104,6 @@ class AlatBandController extends Controller
             $file = $request->file('gambar');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-            // Buat folder jika belum ada
             if (!file_exists(public_path('images/alat-band'))) {
                 mkdir(public_path('images/alat-band'), 0755, true);
             }
@@ -110,11 +117,11 @@ class AlatBandController extends Controller
         return redirect()->route('alat-band.index')->with('success', 'Alat band berhasil diupdate!');
     }
 
+    // 🔹 HAPUS DATA
     public function destroy($id)
     {
         $alat = AlatBand::findOrFail($id);
 
-        // Hapus gambar jika ada
         if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
             unlink(public_path($alat->gambar));
         }
@@ -122,5 +129,22 @@ class AlatBandController extends Controller
         $alat->delete();
 
         return redirect()->route('alat-band.index')->with('success', 'Alat band berhasil dihapus!');
+    }
+
+    // 🔹 API UNTUK FRONTEND VUE
+    public function apiIndex()
+    {
+        $alatBand = AlatBand::select('id', 'nama_alat', 'kategori', 'harga_sewa', 'status', 'gambar', 'deskripsi') // ✅ tambahkan deskripsi
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json($alatBand);
+    }
+
+    // 🔹 API DETAIL SATU PRODUK
+    public function apiShow($id)
+    {
+        $alat = AlatBand::findOrFail($id);
+        return response()->json($alat);
     }
 }

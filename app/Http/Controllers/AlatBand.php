@@ -13,6 +13,7 @@ class AlatBand extends Model
         'kategori',
         'stok',
         'harga_sewa',
+        'deskripsi',
         'gambar',
         'status',
     ];

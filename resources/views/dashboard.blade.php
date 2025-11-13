@@ -11,7 +11,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-500 text-sm font-medium mb-1">Total Alat</p>
-                <h3 class="text-3xl font-bold text-gray-800">{{ $totalAlat }}</h3>
+                <h3 class="text-3xl font-bold text-gray-800">{{ $totalAlat ?? 0 }}</h3>
                 <p class="text-gray-400 text-xs mt-1">Semua produk</p>
             </div>
             <div class="bg-blue-100 rounded-full p-4">
@@ -26,7 +26,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-500 text-sm font-medium mb-1">Tersedia</p>
-                <h3 class="text-3xl font-bold text-green-600">{{ $totalTersedia }}</h3>
+                <h3 class="text-3xl font-bold text-green-600">{{ $totalTersedia ?? 0 }}</h3>
                 <p class="text-gray-400 text-xs mt-1">Siap disewakan</p>
             </div>
             <div class="bg-green-100 rounded-full p-4">
@@ -41,7 +41,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-500 text-sm font-medium mb-1">Sedang Disewa</p>
-                <h3 class="text-3xl font-bold text-orange-600">{{ $totalDisewa }}</h3>
+                <h3 class="text-3xl font-bold text-orange-600">{{ $totalDisewa ?? 0 }}</h3>
                 <p class="text-gray-400 text-xs mt-1">Dalam penyewaan</p>
             </div>
             <div class="bg-orange-100 rounded-full p-4">
@@ -56,7 +56,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-500 text-sm font-medium mb-1">Dalam Perbaikan</p>
-                <h3 class="text-3xl font-bold text-yellow-600">{{ $totalPerbaikan }}</h3>
+                <h3 class="text-3xl font-bold text-yellow-600">{{ $totalPerbaikan ?? 0 }}</h3>
                 <p class="text-gray-400 text-xs mt-1">Sedang diperbaiki</p>
             </div>
             <div class="bg-yellow-100 rounded-full p-4">
@@ -119,7 +119,7 @@
         </div>
         <div class="flex items-center p-3 bg-green-50 rounded-lg">
             <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-            <p class="text-gray-700">{{ $totalAlat }} produk di inventory</p> <span class="ml-auto text-sm text-gray-500">Update</span>
+            <p class="text-gray-700">{{ $totalAlat ?? 0 }} produk di inventory</p> <span class="ml-auto text-sm text-gray-500">Update</span>
         </div>
     </div>
 </div>
