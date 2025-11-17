@@ -4,15 +4,19 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
+
+  server: {
+    host: "127.0.0.1",   // FE berjalan di 127.0.0.1
+    port: 3000,
+    open: true,          // otomatis buka browser
+  },
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    port: 3000,
-    open: true,
-  },
+
   build: {
     target: 'esnext',
     outDir: 'dist',

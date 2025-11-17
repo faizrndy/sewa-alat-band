@@ -1,37 +1,6 @@
 <template>
     <!-- Navbar -->
-    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- Logo -->
-          <div class="flex items-center gap-2">
-            <Music2 class="w-8 h-8 text-blue-600" />
-            <span class="text-slate-900 font-medium text-lg">Kratak FC</span>
-          </div>
-
-          <!-- Nav Menu -->
-          <nav class="hidden md:flex items-center gap-8">
-            <router-link to="/" class="text-slate-600 hover:text-blue-600">Beranda</router-link>
-            <router-link to="/katalog" class="text-slate-600 hover:text-blue-600">Katalog</router-link>
-            <router-link to="/about" class="text-slate-600 hover:text-blue-600">About</router-link>
-            <router-link to="/terms" class="text-slate-600 hover:text-blue-600">Syarat & Ketentuan</router-link>
-          </nav>
-
-          <!-- Button -->
-           <!-- 🛒 Icon Keranjang -->
-<router-link to="/keranjang" class="relative">
-  <span class="text-2xl">🛒</span>
-  <span
-    v-if="cartCount > 0"
-    class="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-  >
-    {{ cartCount }}
-  </span>
-</router-link>
-
-        </div>
-      </div>
-    </header>
+   <Navbar />
 
     <!-- HERO -->
     <section class="bg-gradient-to-r from-purple-600 to-fuchsia-500 text-center py-24 text-white">
@@ -146,6 +115,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import Navbar from "../components/Navbar.vue";
 
 /* ==========================================================
    🔹 STATE PRODUK

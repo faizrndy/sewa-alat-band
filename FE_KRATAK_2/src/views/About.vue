@@ -1,31 +1,8 @@
 <template>
     <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <!-- Header -->
-      <header class="sticky top-0 z-50 bg-white/70 backdrop-blur-lg border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
-          <div class="flex items-center gap-2">
-            <Music2 class="w-7 h-7 text-blue-600" />
-            <span class="text-slate-900 font-semibold text-lg">Kratak FC</span>
-          </div>
-  
-          <nav class="hidden md:flex items-center gap-8">
-            <router-link to="/" class="text-slate-600 hover:text-blue-600">Beranda</router-link>
-            <router-link to="/katalog" class="text-slate-600 hover:text-blue-600">Katalog</router-link>
-            <router-link to="/about" class="text-slate-600 hover:text-blue-600 transition-colors">
-  About
-</router-link>
+        <Navbar />
 
-            <a href="#faq" class="text-slate-600 hover:text-blue-600">FAQ</a>
-            <router-link to="/terms" class="text-slate-600 hover:text-blue-600 transition-colors">
-  Syarat & Ketentuan
-</router-link>
-
-          </nav>
-  
-          <Button class="bg-blue-600 hover:bg-green-500">contact us</Button>
-        </div>
-      </header>
-  
       <!-- Hero -->
       <section class="bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 text-white py-20 text-center relative overflow-hidden">
         <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAi...')]"></div>
@@ -36,7 +13,7 @@
           </p>
         </div>
       </section>
-  
+
       <!-- Siapa Kami -->
       <section class="py-20">
         <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
@@ -51,7 +28,7 @@
               lengkap dengan layanan pengantaran dan instalasi di tempat Anda.
             </p>
           </div>
-  
+
           <div class="relative">
             <div class="rounded-2xl overflow-hidden shadow-xl border border-blue-100">
               <img src="https://source.unsplash.com/600x400/?band,rehearsal" alt="Tentang Kratak FC" class="object-cover w-full h-full" />
@@ -60,12 +37,12 @@
           </div>
         </div>
       </section>
-  
+
       <!-- Kenapa Memilih Kami -->
       <section class="py-20 bg-blue-50">
         <div class="max-w-7xl mx-auto px-6 text-center">
           <h2 class="text-3xl font-bold text-slate-900 mb-10">Kenapa Memilih Kratak FC?</h2>
-  
+
           <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div v-for="(item, i) in reasons" :key="i" class="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition">
               <div class="w-12 h-12 mx-auto mb-4 flex items-center justify-center bg-blue-100 rounded-full">
@@ -77,17 +54,17 @@
           </div>
         </div>
       </section>
-  
+
       <!-- Kontak & Lokasi -->
       <section class="py-20 bg-gradient-to-br from-blue-100 via-blue-50 to-white">
         <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <h2 class="text-3xl font-bold text-slate-900 mb-4">Hubungi Kami</h2>
             <p class="text-slate-600 mb-6">
-              Punya pertanyaan atau ingin melakukan pemesanan langsung?  
+              Punya pertanyaan atau ingin melakukan pemesanan langsung?
               Tim kami siap membantu Anda 24/7.
             </p>
-  
+
             <form class="space-y-4">
               <input type="text" placeholder="Nama Lengkap" class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 outline-none" />
               <input type="email" placeholder="Email Anda" class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 outline-none" />
@@ -95,7 +72,7 @@
               <Button class="bg-blue-600 hover:bg-blue-700">Kirim Pesan</Button>
             </form>
           </div>
-  
+
           <div class="h-[400px] rounded-2xl overflow-hidden border border-blue-100 shadow">
             <iframe
               class="w-full h-full"
@@ -108,7 +85,7 @@
           </div>
         </div>
       </section>
-  
+
       <!-- Footer -->
       <footer class="bg-slate-900 text-white py-10">
         <div class="text-center text-slate-400 text-sm">
@@ -117,11 +94,13 @@
       </footer>
     </div>
   </template>
-  
+
   <script setup>
   import { Music2, Star, Check, Package, Shield } from 'lucide-vue-next'
   import Button from '../components/ui/button.vue'
-  
+
+import Navbar from "../components/Navbar.vue";
+
   const reasons = [
     { icon: Star, title: 'Kualitas Premium', desc: 'Semua alat musik selalu dalam kondisi terbaik dengan perawatan rutin.' },
     { icon: Package, title: 'Pengiriman Cepat', desc: 'Tersedia layanan antar dan jemput alat langsung ke lokasi acara.' },
@@ -129,4 +108,3 @@
     { icon: Check, title: 'Harga Transparan', desc: 'Tidak ada biaya tersembunyi, semua biaya ditampilkan dengan jelas.' },
   ]
   </script>
-  
