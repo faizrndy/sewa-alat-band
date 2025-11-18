@@ -97,6 +97,8 @@
 
   <script setup>
   import { ref, computed, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+
 
   const cart = ref([])
 
@@ -141,13 +143,20 @@
     }
   }
 
-  // Checkout dummy
+  // Checkout
+  const router = useRouter()
   const checkout = () => {
-    alert(`💳 Checkout berhasil!\nTotal: Rp ${totalSemua.value.toLocaleString()}`)
-    cart.value = []
-    localStorage.removeItem('cart')
-    window.dispatchEvent(new Event('cart-updated'))
+  if (cart.value.length === 0) {
+    alert("Keranjang kosong.")
+    return
   }
+
+  // Simpan cart ke localStorage untuk halaman pembayaran
+  localStorage.setItem("checkout_cart", JSON.stringify(cart.value))
+  localStorage.setItem("checkout_total", totalSemua.value)
+
+  router.push("/pembayaran")
+}
   </script>
 
   <style scoped>

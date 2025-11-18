@@ -145,6 +145,19 @@ class AlatBandController extends Controller
     public function apiShow($id)
     {
         $alat = AlatBand::findOrFail($id);
-        return response()->json($alat);
+
+        return response()->json([
+            'id' => $alat->id,
+            'nama_alat' => $alat->nama_alat,
+            'kategori' => $alat->kategori,
+            'harga_sewa' => (int) $alat->harga_sewa,
+            'status' => $alat->status,
+            'gambar' => asset($alat->gambar),   //🔥 INI WAJIB
+            'deskripsi' => $alat->deskripsi,
+            'stok' => (int) $alat->stok,
+            'created_at' => $alat->created_at->format('d-m-Y H:i')
+        ]);
     }
+
+
 }

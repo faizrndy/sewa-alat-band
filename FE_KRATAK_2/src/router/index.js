@@ -6,7 +6,18 @@ const routes = [
   // 🏠 Home tampil saat login sukses
   { path: '/', name: 'Home', component: Home },
 
+  // 📦 KATALOG
   { path: '/katalog', name: 'Katalog', component: () => import('../views/Katalog.vue') },
+
+  // 🔍 DETAIL PRODUK
+  {
+    path: '/katalog/:id',
+    name: 'DetailAlat',
+    component: () => import('../views/DetailAlat.vue'),
+    props: true
+  },
+
+  // INFO PAGES
   { path: '/about', name: 'About', component: () => import('../views/About.vue') },
   { path: '/faq', name: 'FAQ', component: () => import('../views/FAQ.vue') },
   { path: '/terms', name: 'Terms', component: () => import('../views/Terms.vue') },
@@ -29,6 +40,21 @@ const routes = [
     component: () => import('../views/Profile.vue'),
     meta: { requiresAuth: true }
   },
+
+  {
+    path: "/pembayaran",
+    name: "Pembayaran",
+    component: () => import("../views/Pembayaran.vue"),
+    meta: { requiresAuth: true }
+  },
+
+  {
+    path: "/riwayat",
+    name: "Riwayat",
+    component: () => import("../views/Riwayat.vue"),
+    meta: { requiresAuth: false }, // boleh true kalau mau wajib login
+  },
+
 
 ]
 

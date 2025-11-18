@@ -1,96 +1,83 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nota Penyewaan #{{ $riwayat['id'] }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="utf-8">
+    <title>Nota Penyewaan | {{ $trx->kode_transaksi }}</title>
     <style>
-        /* CSS khusus untuk menyembunyikan tombol saat mencetak */
-        @media print {
-            body { -webkit-print-color-adjust: exact; }
-            .no-print { display: none; }
+        body { font-family: Arial, sans-serif; padding: 30px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { width: 120px; margin-bottom: 10px; }
+        .box { border: 1px solid #ddd; padding: 20px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table td, table th {
+            border: 1px solid #ddd;
+            padding: 8px;
         }
+        .right { text-align: right; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-    <div class="container mx-auto max-w-3xl my-10">
-        <div class="mb-4 flex justify-end gap-2 no-print">
-            <a href="{{ route('riwayat.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium">
-                &larr; Kembali ke Riwayat
-            </a>
-            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                🖨️ Cetak Nota
-            </button>
-        </div>
+    <!-- 🔥 LOGO TAMPIL DI SINI -->
+    <div style="text-align: center; margin-bottom: 20px">
 
-        <div class="bg-white rounded-lg shadow-lg p-8 md:p-12">
-            <header class="flex justify-between items-start pb-6 border-b border-gray-200">
-                <div>
-                    <h1 class="text-4xl font-bold text-gray-800">INVOICE</h1>
-                    <p class="text-gray-500">Sewa Alat Band Anda</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xl font-semibold text-gray-700">Nota #{{ str_pad($riwayat['id'], 4, '0', STR_PAD_LEFT) }}</p>
-                    <p class="text-sm text-gray-500">Tanggal: {{ \Carbon\Carbon::parse($riwayat['tanggal_sewa'])->isoFormat('D MMMM YYYY') }}</p>
-                </div>
-            </header>
+        <img src="{{ asset('images/logo.png') }}"
+             alt="Logo Toko"
+             style="width: 120px; display:block; margin:0 auto 10px auto;">
 
-            <section class="my-8 flex justify-between">
-                <div>
-                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-2">Ditagihkan Kepada:</h2>
-                    <p class="text-lg font-bold text-gray-900">{{ $riwayat['nama_penyewa'] }}</p>
-                    <p class="text-gray-600">{{ $riwayat['no_telepon'] }}</p>
-                </div>
-                <div class="text-right">
-                     <h2 class="text-sm font-semibold text-gray-600 uppercase mb-2">Periode Sewa:</h2>
-                     <p class="text-gray-800">{{ \Carbon\Carbon::parse($riwayat['tanggal_sewa'])->isoFormat('D MMM YYYY') }} - {{ \Carbon\Carbon::parse($riwayat['tanggal_kembali'])->isoFormat('D MMM YYYY') }}</p>
-                     <p class="text-gray-600">{{ $riwayat['durasi'] }} hari</p>
-                </div>
-            </section>
+        <h2 style="margin: 0; font-size: 22px;">Kratak FC - Nota Penyewaan</h2>
 
-            <section>
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Harga/Hari</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Durasi</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        <tr>
-                            <td class="px-6 py-4">
-                                <p class="font-medium text-gray-800">{{ $riwayat['nama_alat'] }}</p>
-                            </td>
-                            <td class="px-6 py-4 text-center">Rp {{ number_format($riwayat['total_harga'] / $riwayat['durasi'], 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 text-center">{{ $riwayat['durasi'] }} hari</td>
-                            <td class="px-6 py-4 text-right font-semibold">Rp {{ number_format($riwayat['total_harga'], 0, ',', '.') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
+        <p style="margin: 2px 0 0 0; font-size: 14px;">
+            {{ $trx->kode_transaksi }}
+        </p>
 
-            <section class="mt-8 flex justify-end">
-                <div class="w-full md:w-1/2 lg:w-1/3">
-                    <div class="flex justify-between py-3">
-                        <span class="font-medium text-gray-600">Subtotal</span>
-                        <span class="text-gray-800">Rp {{ number_format($riwayat['total_harga'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="flex justify-between py-4 bg-gray-100 px-4 mt-2 rounded-lg">
-                        <span class="font-bold text-xl text-gray-900">GRAND TOTAL</span>
-                        <span class="font-bold text-xl text-gray-900">Rp {{ number_format($riwayat['total_harga'], 0, ',', '.') }}</span>
-                    </div>
-                </div>
-            </section>
-
-            <footer class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-                <p>Terima kasih telah menyewa alat musik di tempat kami.</p>
-                <p>Pembayaran dapat dilakukan melalui transfer atau tunai.</p>
-            </footer>
-        </div>
     </div>
+
+
+    <div class="box">
+        <h3>Data Penyewa</h3>
+        <p><strong>Nama:</strong> {{ $trx->nama }}</p>
+        <p><strong>Telepon:</strong> {{ $trx->telepon }}</p>
+        <p><strong>Alamat:</strong> {{ $trx->alamat }}</p>
+    </div>
+
+    <div class="box">
+        <h3>Detail Penyewaan</h3>
+        <table>
+            <tr>
+                <th>Alat</th>
+                <th>Tanggal</th>
+                <th>Jumlah</th>
+                <th>Harga</th>
+                <th>Subtotal</th>
+            </tr>
+
+            @foreach($trx->items as $item)
+            <tr>
+                <td>{{ $item->nama_alat }}</td>
+                <td>{{ $item->tanggal_mulai }} → {{ $item->tanggal_selesai }}</td>
+                <td>{{ $item->jumlah }}</td>
+                <td>Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}</td>
+                <td class="right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+            </tr>
+            @endforeach
+        </table>
+
+        <h3 class="right" style="margin-top: 15px;">
+            Total Bayar:
+            <strong>Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</strong>
+        </h3>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="{{ route('riwayat.pdf', $trx->id) }}"
+           style="background: #dc2626; color: white; padding: 12px 24px;
+           border-radius: 8px; text-decoration: none; font-size: 16px;"
+           target="_blank">
+            💾 Download PDF
+        </a>
+    </div>
+
+
 </body>
 </html>
