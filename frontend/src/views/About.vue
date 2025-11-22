@@ -31,7 +31,7 @@
 
           <div class="relative">
             <div class="rounded-2xl overflow-hidden shadow-xl border border-blue-100">
-              <img src="https://source.unsplash.com/600x400/?band,rehearsal" alt="Tentang Kratak FC" class="object-cover w-full h-full" />
+              <img src="/images/logo1.png" alt="Tentang Kratak FC" class="object-cover w-full h-full" />
             </div>
             <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-100 rounded-2xl -z-10"></div>
           </div>

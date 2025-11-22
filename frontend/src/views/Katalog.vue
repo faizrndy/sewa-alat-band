@@ -1,10 +1,14 @@
 <template>
-    <!-- Navbar -->
-   <Navbar />
+  <div class="min-h-screen flex flex-col bg-gray-50">
 
-    <!-- HERO -->
-    <section class="bg-gradient-to-r from-purple-600 to-fuchsia-500 text-center py-24 text-white">
-      <h1 class="text-4xl font-bold mb-2">Katalog Alat Band</h1>
+    <!-- Navbar -->
+    <Navbar />
+
+    <!-- HERO SECTION dengan LOGO -->
+    <section class="relative overflow-hidden bg-gradient-to-br from-purple-600 to-pink-600 text-center py-24">
+      <!-- Logo besar di tengah hero -->
+      <img src="/images/logo1.png" alt="Kratak FC" class="w-24 h-24 mx-auto mb-4" />
+      <h1 class="text-white text-4xl font-bold mb-2">Katalog Alat Band</h1>
       <p class="text-white/90">Temukan alat band terbaik untuk kebutuhan Anda</p>
     </section>
 
@@ -110,12 +114,13 @@
         </router-link>
       </div>
     </section>
-  </template>
+  </div>
+</template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-import Navbar from "../components/Navbar.vue";
+import Navbar from "../components/Navbar.vue"
 
 /* ==========================================================
    🔹 STATE PRODUK

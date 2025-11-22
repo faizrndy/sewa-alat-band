@@ -6,7 +6,6 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import "leaflet/dist/leaflet.css";
 
-
 // BASE URL API
 axios.defaults.baseURL = "http://127.0.0.1:8000";
 

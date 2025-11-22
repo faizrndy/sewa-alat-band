@@ -1,72 +1,89 @@
 <template>
-    <div class="flex justify-center items-center min-h-screen bg-gray-100">
-      <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-8">
-        <h2 class="text-2xl font-bold text-center mb-6">Login Buyer</h2>
+  <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+      <div class="text-center mb-6">
+        <img src="/images/logo1.png" alt="Kratak FC" class="w-20 h-20 mx-auto mb-4" />
+        <h2 class="text-2xl font-bold text-slate-900">Login Buyer</h2>
+      </div>
 
-        <div v-if="errorMessage" class="bg-red-100 text-red-700 p-3 mb-4 rounded">
-          {{ errorMessage }}
+      <form @submit.prevent="login" class="space-y-6">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            placeholder="email@example.com"
+            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            required
+          />
         </div>
 
-        <form @submit.prevent="login">
-          <div class="mb-4">
-            <label class="block mb-1 font-medium">Email</label>
-            <input
-              v-model="email"
-              type="email"
-              class="w-full border rounded px-3 py-2"
-              placeholder="email@example.com"
-              required
-            />
-          </div>
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <input
+            id="password"
+            v-model="form.password"
+            type="password"
+            placeholder="••••••••"
+            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            required
+          />
+        </div>
 
-          <div class="mb-4">
-            <label class="block mb-1 font-medium">Password</label>
-            <input
-              v-model="password"
-              type="password"
-              class="w-full border rounded px-3 py-2"
-              placeholder="******"
-              required
-            />
-          </div>
+        <!-- Error Message -->
+        <div v-if="error" class="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+          {{ error }}
+        </div>
 
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </form>
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-75 disabled:cursor-not-allowed"
+        >
+          <span v-if="loading">
+            <i class="fas fa-spinner animate-spin mr-2"></i> Memproses...
+          </span>
+          <span v-else>Login</span>
+        </button>
+      </form>
+
+      <!-- Link ke Register -->
+      <div class="mt-6 text-center">
+        <p class="text-sm text-slate-600">
+          Belum punya akun? 
+          <RouterLink to="/register" class="font-medium text-blue-600 hover:text-blue-700">Daftar sekarang</RouterLink>
+        </p>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
-  <script setup>
-  import { ref } from "vue";
-  import axios from "axios";
-  import { useRouter } from "vue-router";
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
-  const email = ref("");
-  const password = ref("");
-  const errorMessage = ref("");
-  const router = useRouter();
+const router = useRouter()
+const { login: authLogin } = useAuth()
 
-  const login = async () => {
-    try {
-      const res = await axios.post("/api/login", {
-        email: email.value,
-        password: password.value,
-      });
+const form = ref({ email: '', password: '' })
+const loading = ref(false)
+const error = ref('')
 
-      // SIMPAN TOKEN
-      localStorage.setItem("buyer_token", res.data.token);
-
-      router.push("/");
-    } catch (error) {
-      errorMessage.value =
-        error.response?.data?.message || "Login gagal!";
-    }
-  };
-  </script>
-
-  <style scoped></style>
+const login = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    await authLogin(form.email, form.password)
+    router.push('/dashboard')
+  } catch (err) {
+    error.value = 'Email atau password salah'
+  } finally {
+    loading.value = false
+  }
+}
+</script>
