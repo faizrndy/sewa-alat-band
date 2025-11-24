@@ -1,151 +1,108 @@
 <template>
-  <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+  <header class="fixed top-0 w-full z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <router-link to="/" class="flex items-center gap-3 group">
+        <img 
+          src="/images/logo1.png" 
+          alt="Logo Kratak FC" 
+          class="w-9 h-9 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] group-hover:rotate-12 transition duration-300" 
+        />
+        <span class="text-xl font-black italic tracking-tighter text-white uppercase group-hover:text-rose-500 transition">
+          Kratak <span class="text-rose-600">FC</span>
+        </span>
+      </router-link>
 
-      <!-- LOGO -->
-      <div class="flex items-center gap-2">
-        <img src="/images/logo1.png" alt="Kratak FC Logo" class="w-8 h-8" />
-        <span class="text-slate-900 font-semibold text-lg">Kratak FC</span>
-      </div>
-
-      <!-- MENU UTAMA -->
-      <nav class="hidden md:flex items-center gap-8">
-        <router-link to="/" class="hover:text-blue-600">Home</router-link>
-        <router-link to="/katalog" class="hover:text-blue-600">Katalog</router-link>
-        <router-link to="/about" class="hover:text-blue-600">About</router-link>
-        <a href="#faq" class="hover:text-blue-600">FAQ</a>
-        <router-link to="/terms" class="hover:text-blue-600">Syarat & Ketentuan</router-link>
+      <nav class="hidden md:flex items-center bg-white/5 px-1 py-1 rounded-full border border-white/10">
+        <router-link to="/" class="nav-link" active-class="active-link">Home</router-link>
+        <router-link to="/katalog" class="nav-link" active-class="active-link">List Gear</router-link>
+        <router-link to="/about" class="nav-link" active-class="active-link">Tentang</router-link>
       </nav>
 
-      <!-- BAGIAN KANAN -->
       <div class="flex items-center gap-4">
+        
+        <router-link to="/keranjang" class="relative p-2 text-gray-400 hover:text-white transition group">
+          <i class="fas fa-shopping-cart text-xl group-hover:text-rose-500 transition"></i>
+          <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-black">
+            {{ cartCount }}
+          </span>
+        </router-link>
 
-        <!-- 🔵 BELUM LOGIN -->
         <template v-if="!isLoggedIn">
-          <router-link to="/login" class="text-blue-600 font-semibold hover:text-blue-700">
-            Login
-          </router-link>
-
-          <router-link
-            to="/register"
-            class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
-          >
-            Register
-          </router-link>
-        </template>
-
-        <!-- 🟢 SUDAH LOGIN -->
-        <template v-else>
-
-          <!-- Keranjang -->
-          <router-link to="/keranjang" class="relative text-2xl hover:opacity-80">
-            🛒
-            <span
-              v-if="cartCount > 0"
-              class="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-            >
-              {{ cartCount }}
-            </span>
-          </router-link>
-
-          <!-- Avatar Profil -->
-          <div class="profile-box relative select-none">
-            <img
-              @click="toggleDropdown"
-              src="https://ui-avatars.com/api/?name=User"
-              class="w-9 h-9 rounded-full border cursor-pointer hover:ring-2 hover:ring-blue-400"
-            />
-
-            <!-- 🔽 Dropdown Profil -->
-            <div
-              v-if="profileMenu"
-              class="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg py-2 z-50"
-            >
-              <router-link
-                to="/profile"
-                class="block px-4 py-2 hover:bg-slate-100"
-              >
-                Detail Profil
-              </router-link>
-
-              <button
-                @click="logout"
-                class="w-full text-left px-4 py-2 hover:bg-slate-100 text-red-600"
-              >
-                Logout
-              </button>
-            </div>
+          <div class="flex items-center gap-3 border-l pl-4 border-gray-700">
+            <router-link to="/login" class="text-sm font-bold text-gray-300 hover:text-white transition">LOGIN</router-link>
+            <router-link to="/register" class="bg-rose-600 text-white text-sm font-bold px-5 py-2 rounded-full hover:bg-rose-700 hover:shadow-[0_0_15px_rgba(225,29,72,0.5)] transition uppercase">
+              DAFTAR
+            </router-link>
           </div>
-
         </template>
+
+        <div v-else class="relative profile-box">
+          <button @click="toggleDropdown" class="flex items-center gap-2 focus:outline-none">
+            <img :src="`https://ui-avatars.com/api/?name=User&background=1f2937&color=fff`" class="w-9 h-9 rounded-full border-2 border-rose-600 shadow-lg hover:scale-105 transition" />
+          </button>
+
+          <transition name="scale">
+            <div v-if="profileMenu" class="absolute right-0 mt-4 w-56 bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-800 overflow-hidden z-50">
+              <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
+                <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Member Access</p>
+              </div>
+              <router-link to="/profile" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">Profil Saya</router-link>
+              <router-link to="/riwayat" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">Riwayat Sewa</router-link>
+              <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700">Logout</button>
+            </div>
+          </transition>
+        </div>
 
       </div>
-
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import axios from "axios";
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
+const isLoggedIn = ref(false);
+const cartCount = ref(0);
+const profileMenu = ref(false);
 
-/* ====================== STATE ====================== */
-const isLoggedIn = ref(false)
-const cartCount = ref(0)
-const profileMenu = ref(false)
+const toggleDropdown = () => { profileMenu.value = !profileMenu.value; };
 
-/* ====================== DROPDOWN PROFIL ====================== */
-const toggleDropdown = () => {
-  profileMenu.value = !profileMenu.value;
+const updateState = () => {
+  isLoggedIn.value = !!localStorage.getItem("buyer_token");
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  cartCount.value = cart.length;
 };
 
-/* Tutup dropdown saat klik di luar */
 onMounted(() => {
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".profile-box")) {
-      profileMenu.value = false;
-    }
+    if (!e.target.closest(".profile-box")) profileMenu.value = false;
   });
+  updateState();
+  window.addEventListener('cart-updated', updateState);
 });
 
-/* ====================== CEK LOGIN ====================== */
-onMounted(() => {
-  isLoggedIn.value = !!localStorage.getItem("buyer_token");
-});
+watch(() => route.fullPath, updateState);
 
-/* AUTO UPDATE NAVBAR SAAT PINDAH HALAMAN */
-watch(
-  () => route.fullPath,
-  () => {
-    isLoggedIn.value = !!localStorage.getItem("buyer_token");
-  }
-);
-
-/* ====================== LOGOUT ====================== */
 const logout = async () => {
-  const token = localStorage.getItem("buyer_token");
-
   try {
-    await fetch("/api/buyer/logout", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
-  } catch (e) {
-    console.error("Logout error:", e);
-  }
-
+    const token = localStorage.getItem("buyer_token");
+    await axios.post("/api/buyer/logout", {}, { headers: { Authorization: `Bearer ${token}` } });
+  } catch (e) {}
   localStorage.removeItem("buyer_token");
-
-  isLoggedIn.value = false;
+  updateState();
   profileMenu.value = false;
-
-  // Tetap di halaman HOME
-  router.replace("/");
+  router.push("/");
 };
 </script>
+
+<style scoped>
+.nav-link { @apply px-4 py-2 text-sm font-bold text-gray-400 rounded-full hover:text-white transition-all duration-300 uppercase tracking-wide; }
+.active-link { @apply text-white bg-white/10; }
+.scale-enter-active, .scale-leave-active { transition: all 0.2s ease; }
+.scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.95); }
+</style>

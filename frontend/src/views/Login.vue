@@ -1,61 +1,38 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-      <div class="text-center mb-6">
-        <img src="/images/logo1.png" alt="Kratak FC" class="w-20 h-20 mx-auto mb-4" />
-        <h2 class="text-2xl font-bold text-slate-900">Login Buyer</h2>
+  <div class="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-rose-600/10 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full"></div>
+
+    <div class="w-full max-w-md bg-[#111] border border-gray-800 rounded-3xl p-8 shadow-2xl relative z-10">
+      <div class="text-center mb-8">
+        <img src="/images/logo1.png" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
+        <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Login <span class="text-rose-600">Member</span></h2>
+        <p class="text-gray-500 text-sm mt-2">Masuk buat atur bookingan lo.</p>
       </div>
 
       <form @submit.prevent="login" class="space-y-6">
-        <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="email@example.com"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Email</label>
+          <input v-model="form.email" type="email" placeholder="email@lo.com" class="input-dark" required />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Password</label>
+          <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <!-- Password -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="••••••••"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
-        </div>
-
-        <!-- Error Message -->
-        <div v-if="error" class="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+        <div v-if="error" class="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-lg text-sm text-center">
           {{ error }}
         </div>
 
-        <!-- Submit Button -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-75 disabled:cursor-not-allowed"
-        >
-          <span v-if="loading">
-            <i class="fas fa-spinner animate-spin mr-2"></i> Memproses...
-          </span>
-          <span v-else>Login</span>
+        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
+          {{ loading ? 'Loading...' : 'Gass Masuk' }}
         </button>
       </form>
 
-      <!-- Link ke Register -->
-      <div class="mt-6 text-center">
-        <p class="text-sm text-slate-600">
+      <div class="mt-8 text-center border-t border-gray-800 pt-6">
+        <p class="text-sm text-gray-500">
           Belum punya akun? 
-          <RouterLink to="/register" class="font-medium text-blue-600 hover:text-blue-700">Daftar sekarang</RouterLink>
+          <RouterLink to="/register" class="text-white font-bold hover:text-rose-500 transition">Daftar dulu sini</RouterLink>
         </p>
       </div>
     </div>
@@ -65,25 +42,23 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
-
+import axios from 'axios'
 const router = useRouter()
-const { login: authLogin } = useAuth()
-
 const form = ref({ email: '', password: '' })
 const loading = ref(false)
 const error = ref('')
 
 const login = async () => {
-  loading.value = true
-  error.value = ''
+  loading.value = true; error.value = ''
   try {
-    await authLogin(form.email, form.password)
-    router.push('/dashboard')
-  } catch (err) {
-    error.value = 'Email atau password salah'
-  } finally {
-    loading.value = false
-  }
+    const res = await axios.post('/api/login', form.value)
+    localStorage.setItem('buyer_token', res.data.token)
+    router.push('/')
+  } catch (err) { error.value = 'Email atau password salah bro.' } 
+  finally { loading.value = false }
 }
 </script>
+
+<style scoped>
+.input-dark { @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; }
+</style>

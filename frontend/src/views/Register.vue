@@ -1,100 +1,54 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-      <div class="text-center mb-6">
-        <img src="/images/logo1.png" alt="Kratak FC" class="w-20 h-20 mx-auto mb-4" />
-        <h2 class="text-2xl font-bold text-slate-900">Daftar Buyer</h2>
+  <div class="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-rose-600/10 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full"></div>
+
+    <div class="w-full max-w-md bg-[#111] border border-gray-800 rounded-3xl p-8 shadow-2xl relative z-10">
+      <div class="text-center mb-8">
+        <img src="/images/logo1.png" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
+        <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Join <span class="text-rose-600">Member</span></h2>
+        <p class="text-gray-500 text-sm mt-2">Bikin akun biar gampang sewa alat.</p>
       </div>
 
-      <form @submit.prevent="register" class="space-y-6">
-        <!-- Nama Lengkap -->
+      <form @submit.prevent="register" class="space-y-5">
         <div>
-          <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            placeholder="John Doe"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="label-dark">Nama Lengkap</label>
+          <input v-model="form.name" type="text" placeholder="Nama Panggung Lo" class="input-dark" required />
         </div>
 
-        <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="email@example.com"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="label-dark">Email</label>
+          <input v-model="form.email" type="email" placeholder="email@lo.com" class="input-dark" required />
         </div>
 
-        <!-- Nomor Telepon -->
         <div>
-          <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Nomor Telepon</label>
-          <input
-            id="phone"
-            v-model="form.phone"
-            type="tel"
-            placeholder="+628123456789"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="label-dark">Nomor Telepon</label>
+          <input v-model="form.phone" type="tel" placeholder="0812xxxx" class="input-dark" required />
         </div>
 
-        <!-- Password -->
         <div>
-          <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="••••••••"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="label-dark">Password</label>
+          <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <!-- Confirm Password -->
         <div>
-          <label for="password_confirmation" class="block text-sm font-medium text-slate-700 mb-1">Konfirmasi Password</label>
-          <input
-            id="password_confirmation"
-            v-model="form.password_confirmation"
-            type="password"
-            placeholder="••••••••"
-            class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            required
-          />
+          <label class="label-dark">Konfirmasi Password</label>
+          <input v-model="form.password_confirmation" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <!-- Error Message -->
-        <div v-if="error" class="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+        <div v-if="error" class="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-lg text-sm text-center">
           {{ error }}
         </div>
 
-        <!-- Submit Button -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:opacity-75 disabled:cursor-not-allowed"
-        >
-          <span v-if="loading">
-            <i class="fas fa-spinner animate-spin mr-2"></i> Mendaftar...
-          </span>
-          <span v-else>Daftar</span>
+        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
+          {{ loading ? 'Mendaftar...' : 'DAFTAR SEKARANG' }}
         </button>
       </form>
 
-      <!-- Link ke Login -->
-      <div class="mt-6 text-center">
-        <p class="text-sm text-slate-600">
-          Sudah punya akun? 
-          <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-700">Login</RouterLink>
+      <div class="mt-8 text-center border-t border-gray-800 pt-6">
+        <p class="text-sm text-gray-500">
+          Udah punya akun? 
+          <RouterLink to="/login" class="text-white font-bold hover:text-rose-500 transition">Login aja</RouterLink>
         </p>
       </div>
     </div>
@@ -104,31 +58,33 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import axios from 'axios'
 
 const router = useRouter()
-const { register: authRegister } = useAuth()
-
-const form = ref({
-  name: '',
-  email: '',
-  phone: '',
-  password: '',
-  password_confirmation: ''
-})
+const form = ref({ name: '', email: '', phone: '', password: '', password_confirmation: '' })
 const loading = ref(false)
 const error = ref('')
 
 const register = async () => {
-  loading.value = true
-  error.value = ''
+  loading.value = true; error.value = ''
   try {
-    await authRegister(form.name, form.email, form.password, form.phone)
+    await axios.post('/api/register', {
+      nama_lengkap: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+      password_confirmation: form.value.password_confirmation,
+      nomor_telepon: form.value.phone 
+    })
+    alert('Registrasi berhasil! Silakan login.')
     router.push('/login')
   } catch (err) {
-    error.value = err.response?.data?.message || 'Gagal mendaftar. Coba lagi.'
-  } finally {
-    loading.value = false
-  }
+    const msg = err.response?.data?.message || 'Gagal mendaftar.'
+    error.value = msg
+  } finally { loading.value = false }
 }
 </script>
+
+<style scoped>
+.label-dark { @apply text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block; }
+.input-dark { @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; }
+</style>

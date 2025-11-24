@@ -1,110 +1,66 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <!-- Header -->
-        <Navbar />
+  <div class="min-h-screen bg-[#0a0a0a] text-white pt-20">
+    <Navbar />
 
-      <!-- Hero -->
-      <section class="bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 text-white py-20 text-center relative overflow-hidden">
-        <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAi...')]"></div>
-        <div class="relative max-w-3xl mx-auto px-6">
-          <h1 class="text-4xl md:text-5xl font-bold mb-4">Tentang Kratak FC</h1>
-          <p class="text-blue-100 text-lg">
-            Partner terpercaya dalam penyewaan alat musik dan kebutuhan band sejak 2015.
+    <section class="bg-[#111] py-20 text-center relative overflow-hidden border-b border-gray-800">
+      <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+      <div class="relative max-w-3xl mx-auto px-6 z-10">
+        <h1 class="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">
+          Tentang <span class="text-rose-600">Kratak FC</span>
+        </h1>
+        <p class="text-gray-400 text-lg">
+          Markas sewa alat musik paling solid se-Jakarta sejak 2015.
+        </p>
+      </div>
+    </section>
+
+    <section class="py-20">
+      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="text-3xl font-bold uppercase italic mb-4">Siapa Kami?</h2>
+          <p class="text-gray-400 mb-4 leading-relaxed">
+            Kratak FC hadir buat lo yang butuh gear panggung sadis tapi budget tipis. Kami bukan cuma tempat sewa, kami partner gigs lo.
+          </p>
+          <p class="text-gray-400 leading-relaxed">
+            Mulai dari gitar, bass, drum, sampai sound system ribuan watt, semua ready stock dan dirawat pake hati.
           </p>
         </div>
-      </section>
+        <div class="relative">
+          <img src="/images/logo1.png" class="w-full max-w-xs mx-auto drop-shadow-[0_0_30px_rgba(225,29,72,0.3)] animate-pulse" />
+        </div>
+      </div>
+    </section>
 
-      <!-- Siapa Kami -->
-      <section class="py-20">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 class="text-3xl font-bold text-slate-900 mb-4">Siapa Kami</h2>
-            <p class="text-slate-600 mb-4 leading-relaxed">
-              Kratak FC adalah platform penyewaan alat band yang berbasis di Jakarta, hadir untuk musisi, event organizer,
-              dan pencinta musik yang membutuhkan alat profesional dengan harga terjangkau.
-            </p>
-            <p class="text-slate-600 leading-relaxed">
-              Kami menyediakan berbagai alat band berkualitas — dari gitar, drum, bass, keyboard, hingga sound system —
-              lengkap dengan layanan pengantaran dan instalasi di tempat Anda.
-            </p>
+    <section class="py-20 bg-[#111] border-y border-gray-800">
+      <div class="max-w-7xl mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold mb-10 uppercase italic">Kenapa Harus Kami?</h2>
+        <div class="grid md:grid-cols-4 gap-8">
+          <div class="p-6 bg-black rounded-2xl border border-gray-800">
+            <i class="fas fa-star text-3xl text-rose-600 mb-4"></i>
+            <h3 class="font-bold text-white mb-2">Gear Sultan</h3>
+            <p class="text-gray-500 text-sm">Alat original & terawat.</p>
           </div>
-
-          <div class="relative">
-            <div class="rounded-2xl overflow-hidden shadow-xl border border-blue-100">
-              <img src="/images/logo1.png" alt="Tentang Kratak FC" class="object-cover w-full h-full" />
-            </div>
-            <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-100 rounded-2xl -z-10"></div>
+          <div class="p-6 bg-black rounded-2xl border border-gray-800">
+            <i class="fas fa-truck text-3xl text-rose-600 mb-4"></i>
+            <h3 class="font-bold text-white mb-2">Antar Jemput</h3>
+            <p class="text-gray-500 text-sm">Lo duduk manis, alat sampai.</p>
+          </div>
+          <div class="p-6 bg-black rounded-2xl border border-gray-800">
+             <i class="fas fa-shield-alt text-3xl text-rose-600 mb-4"></i>
+            <h3 class="font-bold text-white mb-2">Aman 100%</h3>
+            <p class="text-gray-500 text-sm">Data & transaksi terjamin.</p>
+          </div>
+          <div class="p-6 bg-black rounded-2xl border border-gray-800">
+             <i class="fas fa-tag text-3xl text-rose-600 mb-4"></i>
+            <h3 class="font-bold text-white mb-2">Harga Teman</h3>
+            <p class="text-gray-500 text-sm">Murah tapi gak murahan.</p>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  </div>
+</template>
 
-      <!-- Kenapa Memilih Kami -->
-      <section class="py-20 bg-blue-50">
-        <div class="max-w-7xl mx-auto px-6 text-center">
-          <h2 class="text-3xl font-bold text-slate-900 mb-10">Kenapa Memilih Kratak FC?</h2>
-
-          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div v-for="(item, i) in reasons" :key="i" class="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition">
-              <div class="w-12 h-12 mx-auto mb-4 flex items-center justify-center bg-blue-100 rounded-full">
-                <component :is="item.icon" class="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 class="font-semibold text-slate-900 mb-2">{{ item.title }}</h3>
-              <p class="text-slate-600 text-sm leading-relaxed">{{ item.desc }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Kontak & Lokasi -->
-      <section class="py-20 bg-gradient-to-br from-blue-100 via-blue-50 to-white">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <h2 class="text-3xl font-bold text-slate-900 mb-4">Hubungi Kami</h2>
-            <p class="text-slate-600 mb-6">
-              Punya pertanyaan atau ingin melakukan pemesanan langsung?
-              Tim kami siap membantu Anda 24/7.
-            </p>
-
-            <form class="space-y-4">
-              <input type="text" placeholder="Nama Lengkap" class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 outline-none" />
-              <input type="email" placeholder="Email Anda" class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 outline-none" />
-              <textarea placeholder="Pesan Anda" rows="4" class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-400 outline-none"></textarea>
-              <Button class="bg-blue-600 hover:bg-blue-700">Kirim Pesan</Button>
-            </form>
-          </div>
-
-          <div class="h-[400px] rounded-2xl overflow-hidden border border-blue-100 shadow">
-            <iframe
-              class="w-full h-full"
-              style="border:0"
-              loading="lazy"
-              allowfullscreen
-              referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.626795054266!2d106.81428687475266!3d-6.180548660614109!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5cc39ab0d2f%3A0x5fbcbdabf8ea5f6c!2sJakarta!5e0!3m2!1sid!2sid!4v1696952476555!5m2!1sid!2sid"
-            ></iframe>
-          </div>
-        </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="bg-slate-900 text-white py-10">
-        <div class="text-center text-slate-400 text-sm">
-          © 2025 Kratak FC. All rights reserved.
-        </div>
-      </footer>
-    </div>
-  </template>
-
-  <script setup>
-  import { Music2, Star, Check, Package, Shield } from 'lucide-vue-next'
-  import Button from '../components/ui/button.vue'
-
-import Navbar from "../components/Navbar.vue";
-
-  const reasons = [
-    { icon: Star, title: 'Kualitas Premium', desc: 'Semua alat musik selalu dalam kondisi terbaik dengan perawatan rutin.' },
-    { icon: Package, title: 'Pengiriman Cepat', desc: 'Tersedia layanan antar dan jemput alat langsung ke lokasi acara.' },
-    { icon: Shield, title: 'Keamanan Terjamin', desc: 'Setiap penyewaan dilindungi oleh sistem keamanan dan jaminan alat.' },
-    { icon: Check, title: 'Harga Transparan', desc: 'Tidak ada biaya tersembunyi, semua biaya ditampilkan dengan jelas.' },
-  ]
-  </script>
+<script setup>
+import Navbar from "@/components/Navbar.vue";
+</script>
