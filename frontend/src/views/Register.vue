@@ -15,29 +15,21 @@
           <label class="label-dark">Nama Lengkap</label>
           <input v-model="form.name" type="text" placeholder="Nama Panggung Lo" class="input-dark" required />
         </div>
-
         <div>
           <label class="label-dark">Email</label>
           <input v-model="form.email" type="email" placeholder="email@lo.com" class="input-dark" required />
         </div>
-
         <div>
           <label class="label-dark">Nomor Telepon</label>
           <input v-model="form.phone" type="tel" placeholder="0812xxxx" class="input-dark" required />
         </div>
-
         <div>
           <label class="label-dark">Password</label>
           <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
-
         <div>
           <label class="label-dark">Konfirmasi Password</label>
           <input v-model="form.password_confirmation" type="password" placeholder="••••••••" class="input-dark" required />
-        </div>
-
-        <div v-if="error" class="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-lg text-sm text-center">
-          {{ error }}
         </div>
 
         <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
@@ -59,14 +51,14 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import Swal from 'sweetalert2' // Import Swal
 
 const router = useRouter()
 const form = ref({ name: '', email: '', phone: '', password: '', password_confirmation: '' })
 const loading = ref(false)
-const error = ref('')
 
 const register = async () => {
-  loading.value = true; error.value = ''
+  loading.value = true
   try {
     await axios.post('/api/register', {
       nama_lengkap: form.value.name,
@@ -75,11 +67,31 @@ const register = async () => {
       password_confirmation: form.value.password_confirmation,
       nomor_telepon: form.value.phone 
     })
-    alert('Registrasi berhasil! Silakan login.')
-    router.push('/login')
+    
+    // SUKSES REGISTER
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil Gabung!',
+      text: 'Akun lo udah jadi. Silakan login.',
+      background: '#151515',
+      color: '#fff',
+      iconColor: '#e11d48',
+      confirmButtonColor: '#e11d48'
+    }).then(() => {
+      router.push('/login')
+    })
+
   } catch (err) {
     const msg = err.response?.data?.message || 'Gagal mendaftar.'
-    error.value = msg
+    // ERROR REGISTER
+    Swal.fire({
+      icon: 'error',
+      title: 'Waduh...',
+      text: msg,
+      background: '#151515',
+      color: '#fff',
+      confirmButtonColor: '#e11d48'
+    });
   } finally { loading.value = false }
 }
 </script>

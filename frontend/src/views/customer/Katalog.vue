@@ -16,7 +16,7 @@
           
           <select v-model="kategori" class="input-dark">
             <option>Semua Kategori</option>
-            <option>Gitar</option><option>Bass</option><option>Drum</option><option>Keyboard</option><option>Sound</option>
+            <option>Gitar</option><option>Bass</option><option>Drum</option><option>Keyboard</option><option>Mikrofon</option>
           </select>
 
           <select v-model="minHarga" class="input-dark">
@@ -42,7 +42,11 @@
           class="group bg-[#151515] rounded-3xl overflow-hidden border border-gray-800 hover:border-rose-600/50 hover:shadow-[0_0_20px_rgba(225,29,72,0.2)] transition-all duration-300"
         >
           <div class="relative h-64 bg-[#050505] p-6 flex items-center justify-center overflow-hidden">
-            <img :src="`http://127.0.0.1:8000/${item.gambar}`" class="w-full h-full object-contain group-hover:scale-110 group-hover:rotate-3 transition duration-500" />
+            <img 
+              :src="getImgUrl(item.gambar)"
+              @error="$event.target.src = 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image'"
+              class="w-full h-full object-contain group-hover:scale-110 group-hover:rotate-3 transition duration-500" 
+            />
             <div class="absolute top-3 left-3">
                <span :class="item.status === 'Tersedia' ? 'bg-green-500 text-black' : 'bg-red-600 text-white'" class="text-[10px] font-black px-2 py-1 uppercase tracking-widest rounded-sm">
                  {{ item.status }}
@@ -72,21 +76,36 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Navbar from "@/components/Navbar.vue"
 
-// Logic sama persis dengan yang lama
+const route = useRoute()
 const alatBand = ref([])
 const search = ref('')
 const kategori = ref('Semua Kategori')
 const minHarga = ref(0)
 const hargaList = Array.from({ length: 11 }, (_, i) => i * 10000 + 50000)
 
+/* --- FUNGSI PINTAR URL GAMBAR --- */
+// Karena di database path-nya 'images/alat-band/...', kita harus gabung dengan URL backend
+const getImgUrl = (path) => {
+  if (!path) return 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image';
+  // Cek apakah path sudah ada http-nya (link luar)
+  if (path.startsWith('http')) return path;
+  // Arahkan ke storage backend
+  return `http://127.0.0.1:8000/storage/${path}`;
+  // ATAU jika file ada di folder public biasa (bukan storage):
+  // return `http://127.0.0.1:8000/${path}`;
+}
+
 const getAlatBand = async () => {
   try {
     const res = await axios.get('/api/alat-band')
     alatBand.value = res.data
-  } catch (err) {}
+  } catch (err) {
+    console.error("Gagal ambil data:", err)
+  }
 }
 
 const filteredProduk = computed(() => {
@@ -98,7 +117,13 @@ const filteredProduk = computed(() => {
 })
 
 const resetFilter = () => { search.value = ''; kategori.value = 'Semua Kategori'; minHarga.value = 0; }
-onMounted(() => { getAlatBand() })
+
+onMounted(() => {
+  getAlatBand();
+  if (route.query.kategori) {
+    kategori.value = route.query.kategori;
+  }
+})
 </script>
 
 <style scoped>

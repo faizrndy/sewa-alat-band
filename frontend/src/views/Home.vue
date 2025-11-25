@@ -52,10 +52,10 @@
                 <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
                   <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Akun Member</p>
                 </div>
-                <router-link to="/profile" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
+                <router-link to="/profile" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
                   <i class="fas fa-user"></i> Profil Saya
                 </router-link>
-                <router-link to="/riwayat" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
+                <router-link to="/riwayat" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
                   <i class="fas fa-history"></i> Riwayat Sewa
                 </router-link>
                 <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700 flex items-center gap-3">
@@ -114,7 +114,10 @@
       <div class="max-w-7xl mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <router-link to="/katalog?kategori=Gitar" class="group relative h-40 rounded-2xl overflow-hidden cursor-pointer">
-            <img src="https://images.unsplash.com/photo-1550985543-f4423c8d3659?auto=format&fit=crop&q=80" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" />
+            <img 
+              src="https://images.unsplash.com/photo-1525201548942-d8732f6617a0?q=80&w=1000&auto=format&fit=crop" 
+              class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" 
+            />
             <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
             <div class="absolute bottom-4 left-4">
               <h3 class="text-white font-bold text-xl uppercase italic group-hover:text-rose-500 transition">Gitar & Bass</h3>

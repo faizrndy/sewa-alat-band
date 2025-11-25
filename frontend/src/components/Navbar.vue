@@ -1,12 +1,12 @@
 <template>
-  <header class="fixed top-0 w-full z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+  <header class="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/10 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       
       <router-link to="/" class="flex items-center gap-3 group">
         <img 
           src="/images/logo1.png" 
           alt="Logo Kratak FC" 
-          class="w-9 h-9 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] group-hover:rotate-12 transition duration-300" 
+          class="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] group-hover:rotate-12 transition duration-300" 
         />
         <span class="text-xl font-black italic tracking-tighter text-white uppercase group-hover:text-rose-500 transition">
           Kratak <span class="text-rose-600">FC</span>
@@ -17,6 +17,7 @@
         <router-link to="/" class="nav-link" active-class="active-link">Home</router-link>
         <router-link to="/katalog" class="nav-link" active-class="active-link">List Gear</router-link>
         <router-link to="/about" class="nav-link" active-class="active-link">Tentang</router-link>
+        <router-link to="/faq" class="nav-link" active-class="active-link">FAQ</router-link>
       </nav>
 
       <div class="flex items-center gap-4">
@@ -31,7 +32,7 @@
         <template v-if="!isLoggedIn">
           <div class="flex items-center gap-3 border-l pl-4 border-gray-700">
             <router-link to="/login" class="text-sm font-bold text-gray-300 hover:text-white transition">LOGIN</router-link>
-            <router-link to="/register" class="bg-rose-600 text-white text-sm font-bold px-5 py-2 rounded-full hover:bg-rose-700 hover:shadow-[0_0_15px_rgba(225,29,72,0.5)] transition uppercase">
+            <router-link to="/register" class="bg-rose-600 text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-rose-700 hover:shadow-[0_0_15px_rgba(225,29,72,0.5)] transition uppercase tracking-wide">
               DAFTAR
             </router-link>
           </div>
@@ -45,11 +46,17 @@
           <transition name="scale">
             <div v-if="profileMenu" class="absolute right-0 mt-4 w-56 bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-800 overflow-hidden z-50">
               <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
-                <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Member Access</p>
+                <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Akun Member</p>
               </div>
-              <router-link to="/profile" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">Profil Saya</router-link>
-              <router-link to="/riwayat" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">Riwayat Sewa</router-link>
-              <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700">Logout</button>
+              <router-link to="/profile" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
+                <i class="fas fa-user"></i> Profil Saya
+              </router-link>
+              <router-link to="/riwayat" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
+                <i class="fas fa-history"></i> Riwayat Sewa
+              </router-link>
+              <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700 flex items-center gap-3">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </button>
             </div>
           </transition>
         </div>
@@ -101,8 +108,15 @@ const logout = async () => {
 </script>
 
 <style scoped>
-.nav-link { @apply px-4 py-2 text-sm font-bold text-gray-400 rounded-full hover:text-white transition-all duration-300 uppercase tracking-wide; }
-.active-link { @apply text-white bg-white/10; }
+/* Styling Pill Navigation */
+.nav-link { 
+  @apply px-5 py-2 text-sm font-bold text-gray-400 rounded-full hover:text-white transition-all duration-300 uppercase tracking-wide; 
+}
+.active-link { 
+  @apply text-white bg-white/10 shadow-inner; 
+}
+
+/* Animasi Dropdown */
 .scale-enter-active, .scale-leave-active { transition: all 0.2s ease; }
 .scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.95); }
 </style>

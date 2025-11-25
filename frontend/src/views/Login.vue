@@ -20,10 +20,6 @@
           <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <div v-if="error" class="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-lg text-sm text-center">
-          {{ error }}
-        </div>
-
         <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
           {{ loading ? 'Loading...' : 'Gass Masuk' }}
         </button>
@@ -43,18 +39,44 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import Swal from 'sweetalert2' // Import Swal
+
 const router = useRouter()
 const form = ref({ email: '', password: '' })
 const loading = ref(false)
-const error = ref('')
 
 const login = async () => {
-  loading.value = true; error.value = ''
+  loading.value = true
   try {
     const res = await axios.post('/api/login', form.value)
     localStorage.setItem('buyer_token', res.data.token)
-    router.push('/')
-  } catch (err) { error.value = 'Email atau password salah bro.' } 
+    
+    // SWEETALERT SUKSES
+    Swal.fire({
+      icon: 'success',
+      title: 'Welcome Back!',
+      text: 'Siap guncang panggung lagi?',
+      background: '#151515',
+      color: '#fff',
+      iconColor: '#e11d48',
+      confirmButtonColor: '#e11d48',
+      timer: 1500,
+      showConfirmButton: false
+    }).then(() => {
+       router.push('/')
+    })
+
+  } catch (err) { 
+    // SWEETALERT ERROR
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Masuk',
+      text: 'Email atau password salah bro.',
+      background: '#151515',
+      color: '#fff',
+      confirmButtonColor: '#e11d48'
+    });
+  } 
   finally { loading.value = false }
 }
 </script>
