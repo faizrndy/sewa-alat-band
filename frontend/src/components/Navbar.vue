@@ -1,145 +1,147 @@
 <template>
-    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+  <header class="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <router-link to="/" class="flex items-center gap-3 group">
+        <img 
+          src="/images/logo1.png" 
+          alt="Logo Kratak FC" 
+          class="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] group-hover:rotate-12 transition duration-300" 
+        />
+        <span class="text-xl font-black italic tracking-tighter text-white uppercase group-hover:text-rose-500 transition">
+          Kratak <span class="text-rose-600">FC</span>
+        </span>
+      </router-link>
 
-        <!-- LOGO -->
-        <div class="flex items-center gap-2">
-          <Music2 class="w-8 h-8 text-blue-600" />
-          <span class="text-slate-900 font-semibold text-lg">Kratak FC</span>
-        </div>
+      <nav class="hidden md:flex items-center bg-white/5 px-1 py-1 rounded-full border border-white/10">
+        <router-link to="/" class="nav-link" active-class="active-link">Home</router-link>
+        <router-link to="/katalog" class="nav-link" active-class="active-link">List Gear</router-link>
+        <router-link to="/about" class="nav-link" active-class="active-link">Tentang</router-link>
+        <router-link to="/faq" class="nav-link" active-class="active-link">FAQ</router-link>
+      </nav>
 
-        <!-- MENU KIRI -->
-        <nav class="hidden md:flex items-center gap-8">
-          <router-link to="/" class="hover:text-blue-600">Home</router-link>
-          <router-link to="/katalog" class="hover:text-blue-600">Katalog</router-link>
-          <router-link to="/about" class="hover:text-blue-600">About</router-link>
-          <router-link to="/#faq" class="hover:text-blue-600">FAQ</router-link>
-          <router-link to="/terms" class="hover:text-blue-600">Syarat & Ketentuan</router-link>
-        </nav>
-
-        <!-- MENU KANAN -->
-        <div class="flex items-center gap-4">
-
-          <!-- 🔵 MODE GUEST -->
-          <template v-if="!isLoggedIn">
-            <router-link to="/login" class="text-blue-600 font-semibold hover:text-blue-700">
-              Login
+      <div class="flex items-center gap-4">
+        
+        <template v-if="!isLoggedIn">
+          <div class="flex items-center gap-3 border-l pl-4 border-gray-700">
+            <router-link to="/login" class="text-sm font-bold text-gray-300 hover:text-white transition uppercase tracking-wide">
+              LOGIN
             </router-link>
-
-            <router-link
-              to="/register"
-              class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
-            >
-              Register
+            <router-link to="/register" class="bg-rose-600 text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-rose-700 hover:shadow-[0_0_15px_rgba(225,29,72,0.5)] transition uppercase tracking-wide">
+              DAFTAR
             </router-link>
-          </template>
+          </div>
+        </template>
 
-          <!-- 🟢 MODE LOGIN -->
-          <template v-else>
-            <!-- Keranjang -->
-            <router-link to="/keranjang" class="relative text-2xl hover:opacity-80">
-              🛒
-              <span
-                v-if="cartCount > 0"
-                class="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-              >
+        <template v-else>
+          <div class="flex items-center gap-4">
+            
+            <router-link to="/keranjang" class="relative group p-2">
+              <div class="text-gray-300 group-hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                </svg>
+              </div>
+              
+              <span v-if="cartCount > 0" class="absolute top-0 right-0 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-black shadow-sm transform scale-100 group-hover:scale-110 transition">
                 {{ cartCount }}
               </span>
             </router-link>
 
-            <!-- Avatar + Dropdown -->
-            <div class="relative select-none profile-box">
-              <img
-                @click="toggleDropdown"
-                src="https://ui-avatars.com/api/?name=User"
-                class="w-9 h-9 rounded-full border cursor-pointer hover:ring-2 hover:ring-blue-400"
-              />
+            <div class="relative profile-box border-l pl-4 border-gray-700">
+              <button @click="toggleDropdown" class="flex items-center gap-2 focus:outline-none">
+                <img :src="`https://ui-avatars.com/api/?name=User&background=1f2937&color=fff`" class="w-10 h-10 rounded-full border-2 border-rose-600 shadow-lg hover:scale-105 transition" />
+              </button>
 
-              <div
-                v-if="profileMenu"
-                class="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg py-2"
-              >
-                <router-link to="/profile" class="block px-4 py-2 hover:bg-slate-100">
-                  Detail Profil
-                </router-link>
-
-                <RouterLink
-  to="/riwayat"
-  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
->
-  Riwayat Pemesanan
-</RouterLink>
-
-
-                <button
-                  @click="logout"
-                  class="w-full text-left px-4 py-2 hover:bg-slate-100 text-red-600"
-                >
-                  Logout
-                </button>
-              </div>
+              <transition name="scale">
+                <div v-if="profileMenu" class="absolute right-0 mt-4 w-56 bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-800 overflow-hidden z-50">
+                  <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
+                    <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Akun Member</p>
+                  </div>
+                  <router-link to="/profile" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">
+                    Profil Saya
+                  </router-link>
+                  <router-link to="/riwayat" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">
+                    Riwayat Sewa
+                  </router-link>
+                  <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700">
+                    Logout
+                  </button>
+                </div>
+              </transition>
             </div>
-          </template>
-        </div>
+
+          </div>
+        </template>
 
       </div>
-    </header>
-  </template>
+    </div>
+  </header>
+</template>
 
-  <script setup>
-  import { ref, onMounted } from "vue";
-  import { useRouter } from "vue-router";
-  import axios from "axios";
-  import { Music2 } from "lucide-vue-next";
+<script setup>
+import { ref, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import axios from "axios";
 
-  const router = useRouter();
-  const isLoggedIn = ref(false);
-  const cartCount = ref(0);
+const router = useRouter();
+const route = useRoute();
+const isLoggedIn = ref(false);
+const cartCount = ref(0);
+const profileMenu = ref(false);
 
-  /* Dropdown Profil */
-  const profileMenu = ref(false);
-  const toggleDropdown = () => {
-    profileMenu.value = !profileMenu.value;
-  };
+const toggleDropdown = () => { profileMenu.value = !profileMenu.value; };
 
-  /* Tutup dropdown ketika klik di luar */
+const updateState = () => {
+  // 1. Cek Token (Apakah sudah login?)
+  const token = localStorage.getItem("buyer_token");
+  isLoggedIn.value = !!token;
+
+  // 2. Logic Keranjang
+  if (token) {
+    // HANYA jika login, hitung isi keranjang
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cartCount.value = cart.length;
+  } else {
+    // Jika TIDAK login, paksa 0 (Meskipun di localStorage ada data)
+    cartCount.value = 0;
+  }
+};
+
+onMounted(() => {
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".profile-box")) {
-      profileMenu.value = false;
-    }
+    if (!e.target.closest(".profile-box")) profileMenu.value = false;
   });
+  updateState();
+  window.addEventListener('cart-updated', updateState);
+});
 
-  /* Cek Login */
-  onMounted(() => {
-    isLoggedIn.value = !!localStorage.getItem("buyer_token");
-  });
+watch(() => route.fullPath, updateState);
 
-  /* Logout */
-  const logout = async () => {
+const logout = async () => {
+  try {
     const token = localStorage.getItem("buyer_token");
+    await axios.post("/api/buyer/logout", {}, { headers: { Authorization: `Bearer ${token}` } });
+  } catch (e) {}
+  
+  localStorage.removeItem("buyer_token");
+  
+  // Opsional: Hapus keranjang saat logout agar bersih total
+  // localStorage.removeItem("cart"); 
 
-    try {
-      await axios.post("/api/buyer/logout", {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch {}
+  updateState(); // Ini akan memicu cartCount jadi 0
+  profileMenu.value = false;
+  router.push("/");
+};
+</script>
 
-    localStorage.removeItem("buyer_token");
-    isLoggedIn.value = false;
-    profileMenu.value = false;
-
-    router.push("/");
-  };
-  </script>
-
-  <style scoped>
-  /* Fade dropdown */
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.2s;
-  }
-  .fade-enter-from,
-  .fade-leave-to {
-    opacity: 0;
-  }
-  </style>
+<style scoped>
+.nav-link { 
+  @apply px-5 py-2 text-sm font-bold text-gray-400 rounded-full hover:text-white transition-all duration-300 uppercase tracking-wide; 
+}
+.active-link { 
+  @apply text-white bg-white/10 shadow-inner; 
+}
+.scale-enter-active, .scale-leave-active { transition: all 0.2s ease; }
+.scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.95); }
+</style>

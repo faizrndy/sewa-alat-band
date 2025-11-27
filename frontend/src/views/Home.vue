@@ -1,361 +1,196 @@
 <template>
-    <div class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white text-slate-900">
+  <div class="min-h-screen flex flex-col font-sans text-slate-800 bg-white selection:bg-rose-500 selection:text-white">
 
-      <!-- ================= NAVBAR ================= -->
-      <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+    <Navbar />
 
-    <!-- LOGO -->
-    <div class="flex items-center gap-2">
-      <Music2 class="w-8 h-8 text-blue-600" />
-      <span class="text-slate-900 font-semibold text-lg">Kratak FC</span>
-    </div>
+    <section class="relative min-h-screen flex items-center justify-center pt-20 bg-black overflow-hidden">
+      <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-40" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black"></div>
+      </div>
 
-    <!-- MENU UTAMA -->
-    <nav class="hidden md:flex items-center gap-8">
-      <router-link to="/" class="hover:text-blue-600">Home</router-link>
-      <router-link to="/katalog" class="hover:text-blue-600">Katalog</router-link>
-      <router-link to="/about" class="hover:text-blue-600">About</router-link>
-      <a href="#faq" class="hover:text-blue-600">FAQ</a>
-      <router-link to="/terms" class="hover:text-blue-600">Syarat & Ketentuan</router-link>
-    </nav>
+      <div class="relative z-10 max-w-5xl mx-auto px-6 text-center mt-10">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-8 animate-fade-in-down">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <span class="text-gray-300 text-xs font-bold tracking-widest uppercase">Rental Alat Musik & Sound System #1</span>
+        </div>
 
-    <!-- BAGIAN KANAN -->
-    <div class="flex items-center gap-4">
+        <h1 class="text-5xl md:text-8xl font-black text-white leading-none tracking-tighter mb-6 drop-shadow-2xl">
+          GUNCANG <br />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">PANGGUNG</span> KAMU
+        </h1>
+        
+        <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+          Sewa alat band profesional, sound system, dan lighting untuk gigs, latihan, atau event sekolah. 
+          <span class="text-white font-medium">Kualitas studio, harga anak band.</span>
+        </p>
 
-      <!-- 🔵 BELUM LOGIN -->
-      <template v-if="!isLoggedIn">
-        <router-link to="/login" class="text-blue-600 font-semibold hover:text-blue-700">
-          Login
-        </router-link>
-
-        <router-link
-          to="/register"
-          class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
-        >
-          Register
-        </router-link>
-      </template>
-
-      <!-- 🟢 SUDAH LOGIN -->
-<template v-else>
-
-<!-- Keranjang -->
-<router-link to="/keranjang" class="relative text-2xl hover:opacity-80">
-  🛒
-  <span
-    v-if="cartCount > 0"
-    class="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-  >
-    {{ cartCount }}
-  </span>
-</router-link>
-
-<!-- Avatar Profil -->
-<div class="profile-box relative select-none">
-  <img
-    @click="toggleDropdown"
-    src="https://ui-avatars.com/api/?name=User"
-    class="w-9 h-9 rounded-full border cursor-pointer hover:ring-2 hover:ring-blue-400"
-  />
-
-  <!-- 🔽 Dropdown Profil -->
-  <div
-    v-if="profileMenu"
-    class="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg py-2 z-50"
-  >
-    <router-link
-      to="/profile"
-      class="block px-4 py-2 hover:bg-slate-100"
-    >
-      Detail Profil
-    </router-link>
-
-    <button
-      @click="logout"
-      class="w-full text-left px-4 py-2 hover:bg-slate-100 text-red-600"
-    >
-      Logout
-    </button>
-  </div>
-</div>
-
-</template>
-
-    </div>
-
-  </div>
-</header>
-
-      <!-- ================= HERO ================= -->
-      <section class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
-        <div class="text-center py-24 md:py-32 max-w-4xl mx-auto px-6">
-          <Badge class="mb-6 bg-white/20 text-white border-white/30">✨ Sewa Alat Band Profesional</Badge>
-          <h1 class="text-white text-4xl font-bold mb-4">Wujudkan Impian Bermusik Anda</h1>
-          <p class="text-blue-100 mb-8">Sewa alat musik profesional untuk konser & latihan.</p>
-
-          <router-link to="/katalog">
-            <Button size="lg" class="bg-blue-600 text-white hover:bg-blue-700 shadow-lg">
-              <Search class="w-5 h-5 mr-2" /> Lihat Katalog
-            </Button>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-5">
+          <router-link to="/katalog" class="w-full sm:w-auto px-10 py-5 bg-rose-600 text-white rounded-full font-black text-lg shadow-[0_0_20px_rgba(225,29,72,0.6)] hover:bg-rose-700 hover:scale-105 transition duration-300 uppercase tracking-wide flex items-center justify-center gap-2">
+            <i class="fas fa-guitar"></i> Cari Gear
+          </router-link>
+          <router-link to="/faq" class="w-full sm:w-auto px-10 py-5 bg-transparent border-2 border-white/20 text-white rounded-full font-bold text-lg hover:bg-white hover:text-black transition duration-300 uppercase tracking-wide">
+            Cara Sewa
           </router-link>
         </div>
-        <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50 to-transparent"></div>
-      </section>
+      </div>
 
-      <!-- ================= FITUR ================= -->
-      <section class="py-16 bg-slate-50">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center">
-          <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center">
-            <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-3">
-              <component :is="f.icon" class="w-7 h-7 text-blue-600" />
-            </div>
-            <h3 class="font-semibold text-slate-900 mb-1">{{ f.title }}</h3>
-            <p class="text-slate-600 text-sm max-w-[200px]">{{ f.desc }}</p>
-          </div>
+      <div class="absolute bottom-0 w-full overflow-hidden py-4 bg-rose-600/10 border-t border-rose-600/20 backdrop-blur-sm">
+        <div class="whitespace-nowrap animate-marquee text-white/20 font-black text-4xl uppercase tracking-widest">
+          GITAR • BASS • DRUM • KEYBOARD • SOUND SYSTEM • MICROPHONE • AMPLIFIER • LIGHTING •
+          GITAR • BASS • DRUM • KEYBOARD • SOUND SYSTEM • MICROPHONE • AMPLIFIER • LIGHTING •
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ================= PRODUK ================= -->
-      <section class="py-20 bg-slate-50 border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          <div class="text-center mb-12">
-            <Badge class="mb-4 bg-blue-100 text-blue-700">🎵 Pilihan Terbaik</Badge>
-            <h2 class="text-3xl font-bold mb-3">Pilihan Alat Band Kami</h2>
-          </div>
-
-          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card
-              v-for="product in randomProducts"
-              :key="product.id"
-              class="border border-slate-200 hover:shadow-lg transition rounded-xl overflow-hidden">
-
-              <div class="aspect-square relative">
-                <img :src="`${api}/storage/${product.gambar}`"
-                  class="w-full h-full object-cover" />
-
-                <div v-if="product.status === 'tersedia'" class="absolute top-3 left-3">
-                  <Badge class="bg-green-500 text-white">Tersedia</Badge>
-                </div>
-
-                <div class="absolute top-3 right-3">
-                  <Badge class="bg-white/90 text-slate-800">{{ product.kategori }}</Badge>
-                </div>
+    <section class="py-20 bg-[#0f0f0f] border-b border-gray-800">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <router-link to="/katalog?kategori=Gitar" class="group relative h-40 rounded-2xl overflow-hidden cursor-pointer">
+              <img 
+                src="https://images.unsplash.com/photo-1525201548942-d8732f6617a0?q=80&w=1000&auto=format&fit=crop" 
+                class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" 
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+              <div class="absolute bottom-4 left-4">
+                <h3 class="text-white font-bold text-xl uppercase italic group-hover:text-rose-500 transition">Gitar & Bass</h3>
               </div>
+            </router-link>
 
-              <div class="p-5">
-                <h3 class="text-slate-900 font-semibold mb-2">{{ product.nama_alat }}</h3>
-                <p class="text-blue-600 font-medium">{{ product.harga_sewa }}</p>
-                <p class="text-xs text-slate-500 mb-4">/hari</p>
-                <Button class="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Detail <ArrowRight class="w-4 h-4 ml-1" />
-                </Button>
+          <router-link to="/katalog?kategori=Drum" class="group relative h-40 rounded-2xl overflow-hidden cursor-pointer">
+            <img src="https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?q=80&w=1000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+            <div class="absolute bottom-4 left-4">
+              <h3 class="text-white font-bold text-xl uppercase italic group-hover:text-rose-500 transition">Drum Kit</h3>
+            </div>
+          </router-link>
+
+          <router-link to="/katalog?kategori=Keyboard" class="group relative h-40 rounded-2xl overflow-hidden cursor-pointer">
+            <img src="https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=1000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+            <div class="absolute bottom-4 left-4">
+              <h3 class="text-white font-bold text-xl uppercase italic group-hover:text-rose-500 transition">Keyboard</h3>
+            </div>
+          </router-link>
+
+          <router-link to="/katalog?kategori=Sound" class="group relative h-40 rounded-2xl overflow-hidden cursor-pointer">
+            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+            <div class="absolute bottom-4 left-4">
+              <h3 class="text-white font-bold text-xl uppercase italic group-hover:text-rose-500 transition">Sound System</h3>
+            </div>
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-24 bg-white">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+          <div>
+            <h2 class="text-4xl font-black text-black italic uppercase tracking-tighter">
+              Gear <span class="text-rose-600">Terpanas</span>
+            </h2>
+            <p class="text-gray-500 mt-2 font-medium">Alat yang paling sering disikat anak band minggu ini.</p>
+          </div>
+          <router-link to="/katalog" class="group flex items-center gap-2 text-black font-bold uppercase tracking-wider hover:text-rose-600 transition">
+            Lihat Semua Gear <i class="fas fa-arrow-right group-hover:translate-x-2 transition"></i>
+          </router-link>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div v-for="product in randomProducts" :key="product.id" class="group bg-gray-50 rounded-3xl p-4 transition hover:bg-black hover:text-white duration-300">
+            <div class="relative h-60 rounded-2xl overflow-hidden bg-white mb-6 border border-gray-200 group-hover:border-gray-700">
+              <img :src="getImgUrl(product.gambar)"
+                @error="$event.target.src = 'https://placehold.co/400x400?text=No+Image'"
+                class="w-full h-full object-contain p-4 group-hover:scale-110 transition duration-500" />
+              
+              <div class="absolute top-3 right-3">
+                 <span v-if="product.status === 'Tersedia'" class="w-3 h-3 rounded-full bg-green-500 block shadow-[0_0_10px_#22c55e]"></span>
+                 <span v-else class="w-3 h-3 rounded-full bg-red-500 block shadow-[0_0_10px_#ef4444]"></span>
               </div>
-            </Card>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ================= REVIEW ================= -->
-      <section id="review" class="py-20 bg-[#0f1b4c] text-white">
-        <div class="max-w-6xl mx-auto px-6 text-center">
-          <h2 class="text-3xl font-bold mb-2">Review Pelanggan</h2>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center mt-12">
-            <div v-for="(r, i) in reviews" :key="i"
-              class="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:bg-white/20 transition w-full max-w-[320px]">
-
-              <img :src="r.avatar" class="rounded-xl mb-4" />
-
-              <p class="font-semibold text-white text-lg">{{ r.name }}</p>
-              <p class="text-sm text-white/70">{{ r.role }}</p>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- ================= FAQ ================= -->
-      <section id="faq" class="py-20 bg-white border-t border-slate-200">
-        <div class="max-w-4xl mx-auto px-6">
-
-          <h2 class="text-center text-3xl font-bold mb-4">FAQ</h2>
-
-          <div v-if="faqs.length" class="space-y-4 mt-12">
-            <div v-for="(faq, index) in faqs" :key="index"
-              class="border border-slate-200 rounded-lg overflow-hidden">
-
-              <button @click="toggleFAQ(index)"
-                class="w-full flex justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100">
-                <span class="font-medium">{{ faq.question }}</span>
-                <span>{{ activeFAQ === index ? '-' : '+' }}</span>
-              </button>
-
-              <transition name="fade">
-                <div v-if="activeFAQ === index"
-                  class="px-5 py-4 bg-white text-slate-600 border-t">
-                  {{ faq.answer }}
+            <div>
+              <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-rose-500">{{ product.kategori }}</div>
+              <h3 class="text-xl font-black mb-3 leading-tight line-clamp-2">{{ product.nama_alat }}</h3>
+              
+              <div class="flex items-center justify-between border-t border-gray-200 group-hover:border-gray-700 pt-4 mt-2">
+                <div>
+                  <p class="font-bold text-lg">{{ Number(product.harga_sewa).toLocaleString() }}</p>
+                  <p class="text-[10px] text-gray-400 uppercase font-bold">Per 24 Jam</p>
                 </div>
-              </transition>
-
+                <router-link :to="`/katalog/${product.id}`" class="w-10 h-10 rounded-full bg-black text-white group-hover:bg-rose-600 flex items-center justify-center transition hover:rotate-90">
+                  <i class="fas fa-plus"></i>
+                </router-link>
+              </div>
             </div>
           </div>
-
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- FOOTER -->
-      <footer class="bg-slate-900 text-white py-10 mt-auto">
-        <div class="text-center text-slate-400 text-sm">
-          © 2025 Kratak FC. All rights reserved.
+    <footer class="bg-[#050505] text-gray-400 py-16 border-t border-gray-900 font-mono text-sm">
+      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12">
+        <div class="col-span-1 md:col-span-1">
+          <div class="flex items-center gap-3 mb-6">
+            <img src="/images/logo1.png" class="w-8 h-8 opacity-80 grayscale hover:grayscale-0 transition" />
+            <span class="text-xl font-black text-white italic">KRATAK FC</span>
+          </div>
+          <p class="mb-6">Rental alat musik & sound system terpercaya di Jakarta.</p>
         </div>
-      </footer>
+        <div>
+          <h4 class="text-white font-bold uppercase tracking-widest mb-6 border-b border-gray-800 pb-2 inline-block">Menu</h4>
+          <ul class="space-y-3">
+            <li><router-link to="/" class="hover:text-rose-500 transition">Beranda</router-link></li>
+            <li><router-link to="/katalog" class="hover:text-rose-500 transition">List Gear</router-link></li>
+          </ul>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-gray-900 text-center text-xs">
+        &copy; 2025 Kratak FC. Keep Rocking! 🤘
+      </div>
+    </footer>
 
-    </div>
-  </template>
-
+  </div>
+</template>
 
 <script setup>
-/* IMPORT */
-import { ref, onMounted, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { ref, onMounted } from "vue";
 import axios from "axios";
-import { Music2, Search, Star, Package, Check, ArrowRight } from "lucide-vue-next";
+import Navbar from "@/components/Navbar.vue";
 
-import Button from "../components/ui/button.vue";
-import Badge from "../components/ui/badge.vue";
-import Card from "../components/ui/card.vue";
-
-/* ROUTING */
-const router = useRouter();
-const route = useRoute();
-const api = axios.defaults.baseURL;
-
-/* ====================== STATE ====================== */
-const isLoggedIn = ref(false);
-const cartCount = ref(0);
-const profileMenu = ref(false);
-
-/* ====================== DROPDOWN PROFIL ====================== */
-const toggleDropdown = () => {
-  profileMenu.value = !profileMenu.value;
-};
-
-/* Tutup dropdown saat klik di luar */
-onMounted(() => {
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".profile-box")) {
-      profileMenu.value = false;
-    }
-  });
-});
-
-/* ====================== CEK LOGIN ====================== */
-onMounted(() => {
-  isLoggedIn.value = !!localStorage.getItem("buyer_token");
-});
-
-/* AUTO UPDATE NAVBAR SAAT PINDAH HALAMAN */
-watch(
-  () => route.fullPath,
-  () => {
-    isLoggedIn.value = !!localStorage.getItem("buyer_token");
-  }
-);
-
-/* ====================== LOGOUT ====================== */
-const logout = async () => {
-  const token = localStorage.getItem("buyer_token");
-
-  try {
-    await axios.post("/api/buyer/logout", {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-  } catch (e) {
-    console.error("Logout error:", e);
-  }
-
-  localStorage.removeItem("buyer_token");
-
-  isLoggedIn.value = false;
-  profileMenu.value = false;
-
-  // Tetap di halaman HOME
-  router.replace("/");
-};
-
-
-/* ====================== FITUR ====================== */
-const features = [
-  { icon: Check, title: "Kualitas Terjamin", desc: "Alat musik terawat dan siap digunakan." },
-  { icon: Star, title: "Rating 4.9/5", desc: "Dipercaya oleh ratusan musisi." },
-  { icon: Package, title: "Pengiriman Cepat", desc: "Antar-jemput alat langsung ke lokasi." }
-];
-
-/* ====================== PRODUK ====================== */
 const randomProducts = ref([]);
+
+// FIXED: Hapus '/storage' karena gambar ada di public biasa
+const getImgUrl = (path) => {
+  if (!path) return 'https://placehold.co/400x400?text=No+Image';
+  if (path.startsWith('http')) return path;
+  return `http://127.0.0.1:8000/${path}`; 
+}
 
 const loadProducts = async () => {
   try {
     const res = await axios.get("/api/alat-band");
-    randomProducts.value = [...res.data]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 4);
+    randomProducts.value = [...res.data].sort(() => Math.random() - 0.5).slice(0, 4);
   } catch (e) {
-    console.error("Gagal memuat produk:", e);
+    console.error("Gagal load produk home", e);
   }
 };
 
-/* ====================== REVIEW ====================== */
-const reviews = ref([]);
-
-const loadReviews = async () => {
-  try {
-    const res = await axios.get("/api/reviews");
-
-    reviews.value = res.data.map((r) => ({
-      name: r.nama_pelanggan ?? "Anonim",
-      avatar: `${api}/${r.gambar}`,
-      role: "Pelanggan"
-    }));
-  } catch (e) {
-    console.error("Gagal memuat review:", e);
-  }
-};
-
-/* ====================== FAQ ====================== */
-const faqs = ref([]);
-const activeFAQ = ref(null);
-
-const toggleFAQ = (i) => {
-  activeFAQ.value = activeFAQ.value === i ? null : i;
-};
-
-const loadFAQ = async () => {
-  try {
-    const res = await axios.get("/api/faqs");
-    faqs.value = res.data;
-  } catch (e) {
-    console.error("Gagal memuat FAQ:", e);
-  }
-};
-
-/* ====================== LOAD DATA SAAT MOUNT ====================== */
 onMounted(() => {
   loadProducts();
-  loadReviews();
-  loadFAQ();
 });
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 20s linear infinite;
 }
 </style>

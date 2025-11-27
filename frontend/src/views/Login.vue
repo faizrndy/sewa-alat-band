@@ -1,72 +1,92 @@
 <template>
-    <div class="flex justify-center items-center min-h-screen bg-gray-100">
-      <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-8">
-        <h2 class="text-2xl font-bold text-center mb-6">Login Buyer</h2>
+  <div class="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-rose-600/10 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full"></div>
 
-        <div v-if="errorMessage" class="bg-red-100 text-red-700 p-3 mb-4 rounded">
-          {{ errorMessage }}
+    <div class="w-full max-w-md bg-[#111] border border-gray-800 rounded-3xl p-8 shadow-2xl relative z-10">
+      <div class="text-center mb-8">
+        <img src="/images/logo1.png" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
+        <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Login <span class="text-rose-600">Member</span></h2>
+        <p class="text-gray-500 text-sm mt-2">Masuk buat atur bookingan lo.</p>
+      </div>
+
+      <form @submit.prevent="login" class="space-y-6">
+        <div>
+          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Email</label>
+          <input v-model="form.email" type="email" placeholder="email@lo.com" class="input-dark" required />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Password</label>
+          <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <form @submit.prevent="login">
-          <div class="mb-4">
-            <label class="block mb-1 font-medium">Email</label>
-            <input
-              v-model="email"
-              type="email"
-              class="w-full border rounded px-3 py-2"
-              placeholder="email@example.com"
-              required
-            />
-          </div>
+        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
+          {{ loading ? 'Loading...' : 'Gass Masuk' }}
+        </button>
+      </form>
 
-          <div class="mb-4">
-            <label class="block mb-1 font-medium">Password</label>
-            <input
-              v-model="password"
-              type="password"
-              class="w-full border rounded px-3 py-2"
-              placeholder="******"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </form>
+      <div class="mt-8 text-center border-t border-gray-800 pt-6">
+        <p class="text-sm text-gray-500">
+          Belum punya akun? 
+          <router-link to="/register" class="text-white font-bold hover:text-rose-500 transition">Daftar dulu sini</router-link>
+        </p>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
-  <script setup>
-  import { ref } from "vue";
-  import axios from "axios";
-  import { useRouter } from "vue-router";
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import Swal from 'sweetalert2' // Pastikan ini sudah diinstall via npm
 
-  const email = ref("");
-  const password = ref("");
-  const errorMessage = ref("");
-  const router = useRouter();
+const router = useRouter()
+const form = ref({ email: '', password: '' })
+const loading = ref(false)
 
-  const login = async () => {
-    try {
-      const res = await axios.post("/api/login", {
-        email: email.value,
-        password: password.value,
-      });
+const login = async () => {
+  loading.value = true
+  try {
+    const res = await axios.post('/api/login', form.value)
+    localStorage.setItem('buyer_token', res.data.token)
+    
+    // Bersihkan keranjang lama agar tidak nyampur
+    localStorage.removeItem('cart'); 
+    window.dispatchEvent(new Event('cart-updated'));
 
-      // SIMPAN TOKEN
-      localStorage.setItem("buyer_token", res.data.token);
+    // SWEETALERT SUKSES
+    Swal.fire({
+      icon: 'success',
+      title: 'Welcome Back!',
+      text: 'Siap guncang panggung lagi?',
+      background: '#151515',
+      color: '#fff',
+      iconColor: '#e11d48',
+      confirmButtonColor: '#e11d48',
+      timer: 1500,
+      showConfirmButton: false
+    }).then(() => {
+       router.push('/')
+    })
 
-      router.push("/");
-    } catch (error) {
-      errorMessage.value =
-        error.response?.data?.message || "Login gagal!";
-    }
-  };
-  </script>
+  } catch (err) { 
+    // SWEETALERT ERROR
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Masuk',
+      text: 'Email atau password salah bro.',
+      background: '#151515',
+      color: '#fff',
+      confirmButtonColor: '#e11d48'
+    });
+  } 
+  finally { loading.value = false }
+}
+</script>
 
-  <style scoped></style>
+<style scoped>
+.input-dark { 
+  @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; 
+}
+</style>

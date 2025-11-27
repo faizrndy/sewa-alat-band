@@ -1,24 +1,23 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 
 export default defineConfig({
-  plugins: [vue()],
-
-  server: {
-    host: "127.0.0.1",   // FE berjalan di 127.0.0.1
-    port: 3000,
-    open: true,          // otomatis buka browser
-  },
+  plugins: [
+    vue(),
+  ],
 
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+      // Ini cara paling standar di Vite agar '@' mengarah ke folder 'src'
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
   },
 
-  build: {
-    target: 'esnext',
-    outDir: 'dist',
+  server: {
+    // Penting! Pakai 127.0.0.1 supaya cocok persis dengan whitelist CORS Laravel
+    host: '127.0.0.1', 
+    port: 3000,
+    open: true, // Otomatis buka browser saat 'npm run dev'
   },
 })
