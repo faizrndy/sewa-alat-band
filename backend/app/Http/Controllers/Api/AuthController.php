@@ -5,74 +5,80 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash; // Tambahkan ini
+use Illuminate\Support\Facades\Validator; // Tambahkan ini
 use App\Models\User;
 
 class AuthController extends Controller
 {
     // ===========================
-    // REGISTER BUYER
+    // REGISTER (UMUM)
     // ===========================
-    public function registerBuyer(Request $request)
+    public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nama_lengkap'   => 'required|string|max:255',
             'email'          => 'required|email|unique:users,email',
             'nomor_telepon'  => 'required|string|max:20',
             'password'       => 'required|min:6',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
         $user = User::create([
-            'name'           => $request->nama_lengkap,
+            'name'           => $request->nama_lengkap, // Simpan ke kolom name juga
             'nama_lengkap'   => $request->nama_lengkap,
             'email'          => $request->email,
             'nomor_telepon'  => $request->nomor_telepon,
-            'password'       => bcrypt($request->password),
-            'role'           => 'buyer',
+            'password'       => Hash::make($request->password),
+            'role'           => 'buyer', // Default daftar sendiri = buyer
         ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Registrasi berhasil!',
             'user'    => $user,
+            'token'   => $token,
         ], 201);
     }
 
     // ===========================
-    // LOGIN BUYER
+    // LOGIN (BISA ADMIN & BUYER)
     // ===========================
-    public function loginBuyer(Request $request)
+    public function login(Request $request)
     {
         $request->validate([
-            'email'     => 'required|email',
-            'password'  => 'required',
+            'email'    => 'required|email',
+            'password' => 'required',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email atau password salah'
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->first();
+        // ✅ PENGECEKAN ROLE DIHAPUS
+        // Sekarang Admin bisa login lewat sini. 
+        // Frontend yang akan menentukan redirect ke /admin atau /home
 
-        // Hanya buyer boleh login API ini
-        if ($user->role !== 'buyer') {
-            return response()->json([
-                'message' => 'Akun ini bukan buyer'
-            ], 403);
-        }
-
-        // Sanctum token
-        $token = $user->createToken('buyer_token')->plainTextToken;
+        // Buat Token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil!',
             'token'   => $token,
-            'user'    => $user
+            'user'    => $user // Data user (termasuk role) dikirim ke frontend
         ]);
     }
 
     // ===========================
-    // GET PROFILE BUYER
+    // GET PROFILE
     // ===========================
     public function profile(Request $request)
     {
@@ -82,16 +88,20 @@ class AuthController extends Controller
     }
 
     // ===========================
-    // UPDATE PROFILE BUYER
+    // UPDATE PROFILE
     // ===========================
     public function updateProfile(Request $request)
     {
         $user = $request->user();
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nama_lengkap'   => 'required|string|max:255',
             'nomor_telepon'  => 'required|string|max:20',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
 
         $user->update([
             'nama_lengkap'   => $request->nama_lengkap,

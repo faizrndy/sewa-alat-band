@@ -28,7 +28,7 @@
       <div class="mt-8 text-center border-t border-gray-800 pt-6">
         <p class="text-sm text-gray-500">
           Belum punya akun? 
-          <RouterLink to="/register" class="text-white font-bold hover:text-rose-500 transition">Daftar dulu sini</RouterLink>
+          <router-link to="/register" class="text-white font-bold hover:text-rose-500 transition">Daftar dulu sini</router-link>
         </p>
       </div>
     </div>
@@ -39,7 +39,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import Swal from 'sweetalert2' // Import Swal
+import Swal from 'sweetalert2' // Pastikan ini sudah diinstall via npm
 
 const router = useRouter()
 const form = ref({ email: '', password: '' })
@@ -51,6 +51,10 @@ const login = async () => {
     const res = await axios.post('/api/login', form.value)
     localStorage.setItem('buyer_token', res.data.token)
     
+    // Bersihkan keranjang lama agar tidak nyampur
+    localStorage.removeItem('cart'); 
+    window.dispatchEvent(new Event('cart-updated'));
+
     // SWEETALERT SUKSES
     Swal.fire({
       icon: 'success',
@@ -82,5 +86,7 @@ const login = async () => {
 </script>
 
 <style scoped>
-.input-dark { @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; }
+.input-dark { 
+  @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; 
+}
 </style>

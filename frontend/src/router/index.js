@@ -64,6 +64,31 @@ const routes = [
   // AUTH
   { path: '/login', name: 'Login', component: () => import('../views/Login.vue') },
   { path: '/register', name: 'Register', component: () => import('../views/Register.vue') },
+
+
+  { 
+    path: '/admin/login', 
+    name: 'AdminLogin', 
+    component: () => import('../views/admin/LoginAdmin.vue') 
+  },
+  { 
+    path: '/admin/dashboard', 
+    name: 'AdminDashboard', 
+    component: () => import('../views/admin/Dashboard.vue'),
+    meta: { requiresAdmin: true } // Nanti buat logic cek token admin
+  },
+  { 
+    path: '/admin/alat', 
+    name: 'AdminAlatIndex', 
+    component: () => import('../views/admin/alat/Index.vue') 
+  },
+  { 
+    path: '/admin/alat/create', 
+    name: 'AdminAlatCreate', 
+    component: () => import('../views/admin/alat/Create.vue') 
+  },
+  
+  // ...
 ]
 
 const router = createRouter({

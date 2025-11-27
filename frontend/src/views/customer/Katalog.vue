@@ -13,17 +13,14 @@
       <div class="bg-[#151515] p-6 rounded-2xl border border-gray-800 shadow-xl mb-10">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input v-model="search" type="text" placeholder="Cari nama alat..." class="input-dark" />
-          
           <select v-model="kategori" class="input-dark">
             <option>Semua Kategori</option>
             <option>Gitar</option><option>Bass</option><option>Drum</option><option>Keyboard</option><option>Mikrofon</option>
           </select>
-
           <select v-model="minHarga" class="input-dark">
             <option :value="0">Harga Min</option>
             <option v-for="n in hargaList" :key="n" :value="n">Rp {{ n.toLocaleString() }}</option>
           </select>
-
           <button @click="resetFilter" class="bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700 transition uppercase tracking-wide">
             Reset
           </button>
@@ -57,7 +54,6 @@
           <div class="p-6">
             <p class="text-rose-500 text-xs font-bold uppercase tracking-widest mb-1">{{ item.kategori }}</p>
             <h3 class="text-white text-xl font-black uppercase italic leading-none mb-4 truncate group-hover:text-rose-500 transition">{{ item.nama_alat }}</h3>
-            
             <div class="flex items-center justify-between border-t border-gray-800 pt-4">
                <div>
                  <p class="text-gray-400 text-xs uppercase font-bold">Sewa Harian</p>
@@ -87,16 +83,11 @@ const kategori = ref('Semua Kategori')
 const minHarga = ref(0)
 const hargaList = Array.from({ length: 11 }, (_, i) => i * 10000 + 50000)
 
-/* --- FUNGSI PINTAR URL GAMBAR --- */
-// Karena di database path-nya 'images/alat-band/...', kita harus gabung dengan URL backend
+// FIXED: Hapus '/storage'
 const getImgUrl = (path) => {
   if (!path) return 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image';
-  // Cek apakah path sudah ada http-nya (link luar)
   if (path.startsWith('http')) return path;
-  // Arahkan ke storage backend
-  return `http://127.0.0.1:8000/storage/${path}`;
-  // ATAU jika file ada di folder public biasa (bukan storage):
-  // return `http://127.0.0.1:8000/${path}`;
+  return `http://127.0.0.1:8000/${path}`;
 }
 
 const getAlatBand = async () => {

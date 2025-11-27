@@ -2,21 +2,56 @@
   <div class="min-h-screen bg-[#0a0a0a] text-white py-10 px-6 font-sans pt-28">
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
       
-      <div class="lg:col-span-3 mb-4 lg:mb-0">
-         <h1 class="text-3xl font-black italic uppercase tracking-tighter">Checkout & <span class="text-rose-600">Payment</span></h1>
-         <p class="text-gray-500 mt-2">Lengkapi data buat selesaikan bookingan lo.</p>
+      <div class="lg:col-span-3 mb-2">
+         <h1 class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter">
+           Checkout <span class="text-rose-600">&</span> Payment
+         </h1>
+         <p class="text-gray-500 mt-2 text-sm md:text-base">Mode Sandbox (Test) Aktif.</p>
       </div>
 
       <div class="lg:col-span-2 space-y-6">
-        <div class="bg-[#151515] p-8 rounded-3xl border border-gray-800">
+        
+        <div class="bg-[#151515] p-6 md:p-8 rounded-3xl border border-gray-800">
           <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-wider">
             <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">1</span>
+            Review Gear
+          </h2>
+          <div class="space-y-4">
+            <div v-for="item in itemsKeranjang" :key="item.id" class="flex gap-4 bg-black/40 p-4 rounded-2xl border border-gray-800/50">
+              <div class="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-white rounded-xl overflow-hidden">
+                <img 
+                  :src="getImgUrl(item.gambar)" 
+                  @error="$event.target.src = 'https://placehold.co/150x150/1a1a1a/FFF?text=No+Image'"
+                  class="w-full h-full object-contain p-1"
+                />
+              </div>
+              <div class="flex-1 flex flex-col justify-center">
+                <h3 class="font-black text-white text-base md:text-lg uppercase italic leading-tight">{{ item.nama_alat }}</h3>
+                <div class="text-xs text-gray-500 mt-1 font-mono">
+                  {{ item.tanggalMulai }} <span class="text-rose-500">➜</span> {{ item.tanggalSelesai }}
+                </div>
+                <div class="mt-2 flex items-center justify-between">
+                  <p class="text-xs text-gray-400">
+                    Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.jumlah }} Unit
+                  </p>
+                  <p class="font-bold text-white">
+                    Total: Rp {{ (hitungHari(item) * item.harga_sewa * item.jumlah).toLocaleString() }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[#151515] p-6 md:p-8 rounded-3xl border border-gray-800">
+          <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-wider">
+            <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">2</span>
             Data Penyewa
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div>
                <label class="label-dark">Nama Lengkap</label>
-               <input v-model="nama" class="input-dark" type="text" placeholder="Nama Panggung" />
+               <input v-model="nama" class="input-dark" type="text" placeholder="Nama Panggung / Asli" />
              </div>
              <div>
                <label class="label-dark">WhatsApp</label>
@@ -24,37 +59,47 @@
              </div>
              <div class="md:col-span-2">
                <label class="label-dark">Identitas (KTP/SIM)</label>
-               <div class="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-800 hover:border-rose-600 transition group">
-                  <input type="file" @change="onIdentitas" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white hover:file:bg-rose-700"/>
-                  <p class="text-xs text-gray-600 mt-2 group-hover:text-gray-400">Upload foto kartu identitas asli</p>
+               <div class="relative border-2 border-dashed border-gray-700 bg-black/30 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-800 hover:border-rose-600 transition group">
+                  <input type="file" @change="onIdentitas" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"/>
+                  <div v-if="!fileIdentitas" class="flex flex-col items-center text-gray-500 group-hover:text-rose-500 transition">
+                    <i class="fas fa-id-card text-3xl mb-2"></i>
+                    <p class="text-sm font-bold">Klik untuk upload KTP/SIM</p>
+                  </div>
+                  <div v-else class="flex items-center justify-center gap-3 text-green-500">
+                    <i class="fas fa-check-circle text-2xl"></i>
+                    <p class="text-sm font-bold text-white">{{ fileIdentitas.name }}</p>
+                  </div>
                </div>
              </div>
           </div>
         </div>
 
-        <div class="bg-[#151515] p-8 rounded-3xl border border-gray-800">
+        <div class="bg-[#151515] p-6 md:p-8 rounded-3xl border border-gray-800">
           <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-wider">
-            <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">2</span>
+            <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">3</span>
             Pengiriman
           </h2>
           
           <div class="flex gap-4 mb-6">
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="ambil" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
-              <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500">
-                <i class="fas fa-store mb-2 block text-xl"></i> Ambil Sendiri
+              <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
+                <i class="fas fa-store text-2xl"></i> 
+                <span class="font-bold text-sm">Ambil Sendiri</span>
               </div>
             </label>
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="antar" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
-              <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500">
-                <i class="fas fa-truck mb-2 block text-xl"></i> Antar Kurir
+              <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
+                <i class="fas fa-truck-fast text-2xl"></i>
+                <span class="font-bold text-sm">Antar Kurir</span>
               </div>
             </label>
           </div>
 
           <div v-show="metodePengiriman === 'antar'" class="space-y-4">
-            <div id="map" class="w-full h-72 rounded-xl border border-gray-700 z-0 grayscale invert"></div>
+            <div id="map" class="w-full h-72 rounded-xl border border-gray-700 z-0 grayscale invert contrast-125"></div>
+            <p class="text-xs text-gray-500 text-center italic">*Klik peta untuk menentukan lokasi</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
@@ -67,40 +112,43 @@
                </div>
             </div>
             
-            <textarea v-model="alamat" class="input-dark" rows="2" readonly></textarea>
-            <textarea v-model="deskripsiLokasi" class="input-dark" rows="2" placeholder="Detail patokan rumah..."></textarea>
-            <p v-if="jarak > 30" class="text-red-500 text-xs font-bold bg-red-900/20 p-3 rounded border border-red-900">⚠️ Kejauhan bos (>30km). Gak bisa antar.</p>
+            <textarea v-model="alamat" class="input-dark" rows="2" readonly placeholder="Alamat otomatis..."></textarea>
+            <textarea v-model="deskripsiLokasi" class="input-dark" rows="2" placeholder="Detail patokan..."></textarea>
           </div>
         </div>
       </div>
 
       <div class="lg:col-span-1">
-        <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 sticky top-28">
-          <h2 class="text-xl font-black text-white mb-6 uppercase italic tracking-wider border-b border-gray-800 pb-4">Total Bayar</h2>
+        <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 sticky top-28 shadow-2xl">
+          <h2 class="text-xl font-black text-white mb-6 uppercase italic tracking-wider border-b border-gray-800 pb-4">
+            Total <span class="text-rose-600">Bayar</span>
+          </h2>
           
-          <div class="space-y-3 text-gray-400 mb-6 border-b border-gray-800 pb-6">
-             <div class="flex justify-between">
-               <span>Sewa Alat</span>
+          <div class="space-y-3 mb-6">
+             <div class="flex justify-between text-gray-400 text-sm">
+               <span>Subtotal</span>
                <span class="text-white font-bold">Rp {{ totalSewa.toLocaleString() }}</span>
              </div>
-             <div class="flex justify-between" v-if="metodePengiriman === 'antar'">
-               <span>Ongkir</span>
+             <div class="flex justify-between text-gray-400 text-sm" v-if="metodePengiriman === 'antar'">
+               <span>Biaya Antar</span>
                <span class="text-white font-bold">Rp {{ tarifAntar.toLocaleString() }}</span>
              </div>
-          </div>
-
-          <div class="flex justify-between text-2xl font-black text-white mb-8">
-            <span>Total</span>
-            <span class="text-rose-500">Rp {{ totalBayar.toLocaleString() }}</span>
+             <div class="border-t border-gray-800 my-2"></div>
+             <div class="flex justify-between items-end">
+                <span class="text-gray-300 font-bold">Total Akhir</span>
+                <span class="text-2xl font-black text-rose-500">Rp {{ totalBayar.toLocaleString() }}</span>
+             </div>
           </div>
 
           <button
              @click="kirimPembayaran"
              :disabled="loading"
-             class="w-full bg-white text-black py-4 rounded-xl font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(225,29,72,0.5)] transition-all disabled:bg-gray-800 disabled:text-gray-600 cursor-pointer"
+             class="w-full bg-white text-black py-4 rounded-xl font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(225,29,72,0.5)] transition-all disabled:bg-gray-800 disabled:text-gray-600 cursor-pointer relative overflow-hidden group"
           >
-             {{ loading ? "Memproses..." : "BAYAR SEKARANG" }}
+             <span class="relative z-10 group-hover:scale-105 transition">{{ loading ? "Memproses..." : "BAYAR SEKARANG" }}</span>
           </button>
+
+          <p class="text-[10px] text-center text-gray-600 mt-4 uppercase tracking-widest">Secured by Midtrans Sandbox</p>
         </div>
       </div>
 
@@ -112,7 +160,7 @@
 import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import L from "leaflet";
-import Swal from "sweetalert2"; // Import SweetAlert
+import Swal from "sweetalert2";
 
 const nama = ref("");
 const telepon = ref("");
@@ -129,6 +177,20 @@ let marker;
 const tokoLat = -7.568; 
 const tokoLon = 110.829;
 
+const getImgUrl = (path) => {
+  if (!path) return 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image';
+  if (path.startsWith('http')) return path;
+  return `http://127.0.0.1:8000/${path}`;
+}
+
+const hitungHari = (item) => {
+  if (!item.tanggalMulai || !item.tanggalSelesai) return 0;
+  const start = new Date(item.tanggalMulai);
+  const end = new Date(item.tanggalSelesai);
+  const diff = (end - start) / (1000 * 60 * 60 * 24);
+  return diff > 0 ? diff : 0;
+}
+
 function hitungJarak(lat1, lon1, lat2, lon2) {
   const R = 6371; 
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -140,9 +202,12 @@ function hitungJarak(lat1, lon1, lat2, lon2) {
 async function pilihLokasi(e) {
   lat.value = e.latlng.lat;
   lon.value = e.latlng.lng;
-  marker.setLatLng(e.latlng);
+  if (marker) marker.setLatLng(e.latlng);
+  else marker = L.marker(e.latlng).addTo(map);
+  
   jarak.value = hitungJarak(tokoLat, tokoLon, lat.value, lon.value);
   updateTarif();
+  
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.value}&lon=${lon.value}&format=json`);
     const data = await res.json();
@@ -174,13 +239,8 @@ function updateTarif() {
 const itemsKeranjang = ref(JSON.parse(localStorage.getItem("cart") || "[]"));
 const totalSewa = computed(() => {
   return itemsKeranjang.value.reduce((total, item) => {
-    if (!item.tanggalMulai || !item.tanggalSelesai) return total;
-    const start = new Date(item.tanggalMulai);
-    const end = new Date(item.tanggalSelesai);
-    const ms = end - start;
-    if (isNaN(ms) || ms <= 0) return total;
-    const days = ms / (1000 * 60 * 60 * 24);
-    return total + days * item.harga_sewa * item.jumlah;
+    const hari = hitungHari(item);
+    return total + (hari * item.harga_sewa * item.jumlah);
   }, 0);
 });
 const totalBayar = computed(() => totalSewa.value + (metodePengiriman.value === "antar" ? tarifAntar.value : 0));
@@ -188,23 +248,10 @@ const totalBayar = computed(() => totalSewa.value + (metodePengiriman.value === 
 const loading = ref(false);
 
 const kirimPembayaran = async () => {
-  // 1. Validasi Frontend
-  if (!itemsKeranjang.value.length) {
-    Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Pilih alat dulu ya!', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' });
-    return;
-  }
-  if (!nama.value || !telepon.value) {
-    Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'Isi nama dan WhatsApp dulu.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' });
-    return;
-  }
-  if (!fileIdentitas.value) {
-    Swal.fire({ icon: 'warning', title: 'Identitas Wajib', text: 'Upload foto KTP/SIM asli ya.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' });
-    return;
-  }
-  if (metodePengiriman.value === 'antar' && (!lat.value)) {
-    Swal.fire({ icon: 'warning', title: 'Lokasi Belum Dipilih', text: 'Klik peta untuk atur titik antar.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' });
-    return;
-  }
+  if (!itemsKeranjang.value.length) { Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
+  if (!nama.value || !telepon.value) { Swal.fire({ icon: 'warning', title: 'Data Kurang', text: 'Isi nama dan WhatsApp.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
+  if (!fileIdentitas.value) { Swal.fire({ icon: 'warning', title: 'Identitas Wajib', text: 'Upload foto KTP/SIM asli.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
+  if (metodePengiriman.value === 'antar' && (!lat.value)) { Swal.fire({ icon: 'warning', title: 'Lokasi Belum Ada', text: 'Klik peta dulu.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
 
   loading.value = true;
   try {
@@ -227,12 +274,12 @@ const kirimPembayaran = async () => {
         headers: { "Content-Type": "multipart/form-data" } 
     });
     
-    // Midtrans Logic
     const snapToken = res.data.snap_token;
     if (window.snap && snapToken) {
       window.snap.pay(snapToken, {
         onSuccess: () => { 
             localStorage.removeItem("cart"); 
+            window.dispatchEvent(new Event('cart-updated'));
             Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', background: '#151515', color: '#fff' }).then(() => {
                 window.location.href = `/riwayat?telepon=${telepon.value}`; 
             });
@@ -246,20 +293,19 @@ const kirimPembayaran = async () => {
         onClose: () => Swal.fire({ icon: 'question', title: 'Batal Bayar?', text: 'Lo bisa bayar nanti di menu Riwayat.', background: '#151515', color: '#fff' })
       });
     } else {
-        // Fallback jika tanpa Midtrans
         localStorage.removeItem("cart");
-        Swal.fire({ icon: 'success', title: 'Order Masuk!', text: 'Tunggu konfirmasi admin ya.', background: '#151515', color: '#fff' }).then(() => {
-            window.location.href = `/riwayat?telepon=${telepon.value}`;
-        });
+        window.dispatchEvent(new Event('cart-updated'));
+        window.location.href = `/riwayat?telepon=${telepon.value}`;
     }
   } catch (err) {
-    console.error(err);
-    // TAMPILKAN PESAN ERROR ASLI DARI LARAVEL
-    const errorMsg = err.response?.data?.message || err.message || "Terjadi kesalahan server.";
+    // TAMPILKAN ERROR DETAIL DARI BACKEND
+    const errorTitle = "Server Error 😭";
+    const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Terjadi kesalahan.";
+    
     Swal.fire({
         icon: 'error',
-        title: 'Gagal Memproses',
-        text: errorMsg, // <-- Ini akan memberitahu kita kenapa server error
+        title: errorTitle,
+        text: errorMsg, // <-- Ini yang penting!
         background: '#151515',
         color: '#fff',
         confirmButtonColor: '#e11d48'

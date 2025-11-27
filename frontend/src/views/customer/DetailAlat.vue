@@ -78,7 +78,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Navbar from "@/components/Navbar.vue"
-import Swal from 'sweetalert2' // Import SweetAlert
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const alat = ref(null)
@@ -87,10 +87,11 @@ const tanggalMulai = ref('')
 const tanggalSelesai = ref('')
 const jumlah = ref(1)
 
+// FIXED: Hapus '/storage'
 const getImgUrl = (path) => {
   if (!path) return 'https://placehold.co/600x400/1a1a1a/FFF?text=No+Image';
   if (path.startsWith('http')) return path;
-  return `http://127.0.0.1:8000/storage/${path}`;
+  return `http://127.0.0.1:8000/${path}`;
 }
 
 const getAlat = async () => {
@@ -113,30 +114,14 @@ const lamaSewa = computed(() => {
 const totalBiaya = computed(() => alat.value ? lamaSewa.value * alat.value.harga_sewa * jumlah.value : 0)
 
 const tambahKeranjang = () => {
-  // KONFIGURASI TOAST SWEETALERT
   const Toast = Swal.mixin({
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true,
-    background: '#151515',
-    color: '#fff',
-    iconColor: '#e11d48',
-    didOpen: (toast) => {
-      toast.addEventListener('mouseenter', Swal.stopTimer)
-      toast.addEventListener('mouseleave', Swal.resumeTimer)
-    }
+    toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
+    background: '#151515', color: '#fff', iconColor: '#e11d48',
+    didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
   })
 
-  if (!tanggalMulai.value || !tanggalSelesai.value) { 
-    Toast.fire({ icon: 'warning', title: 'Pilih tanggal sewa dulu bos!' });
-    return; 
-  }
-  if (lamaSewa.value <= 0) { 
-    Toast.fire({ icon: 'error', title: 'Tanggal selesai harus setelah mulai!' });
-    return; 
-  }
+  if (!tanggalMulai.value || !tanggalSelesai.value) { Toast.fire({ icon: 'warning', title: 'Pilih tanggal sewa dulu bos!' }); return; }
+  if (lamaSewa.value <= 0) { Toast.fire({ icon: 'error', title: 'Tanggal selesai harus setelah mulai!' }); return; }
 
   const cart = JSON.parse(localStorage.getItem('cart') || '[]')
   const existingItem = cart.find(item => item.id === alat.value.id && item.tanggalMulai === tanggalMulai.value && item.tanggalSelesai === tanggalSelesai.value);
@@ -144,23 +129,14 @@ const tambahKeranjang = () => {
   if (existingItem) { existingItem.jumlah += jumlah.value; } 
   else {
       cart.push({
-          id: alat.value.id,
-          nama_alat: alat.value.nama_alat,
-          gambar: alat.value.gambar,
-          harga_sewa: alat.value.harga_sewa,
-          jumlah: jumlah.value,
-          tanggalMulai: tanggalMulai.value,
-          tanggalSelesai: tanggalSelesai.value,
+          id: alat.value.id, nama_alat: alat.value.nama_alat, gambar: alat.value.gambar,
+          harga_sewa: alat.value.harga_sewa, jumlah: jumlah.value,
+          tanggalMulai: tanggalMulai.value, tanggalSelesai: tanggalSelesai.value,
       })
   }
   localStorage.setItem('cart', JSON.stringify(cart))
   window.dispatchEvent(new Event('cart-updated'))
-  
-  // TAMPILKAN NOTIF SUKSES
-  Toast.fire({
-    icon: 'success',
-    title: 'Sip! Gear masuk keranjang 🤘'
-  })
+  Toast.fire({ icon: 'success', title: 'Sip! Gear masuk keranjang 🤘' })
 }
 </script>
 

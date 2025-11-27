@@ -1,5 +1,5 @@
 <template>
-  <header class="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+  <header class="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       
       <router-link to="/" class="flex items-center gap-3 group">
@@ -22,44 +22,57 @@
 
       <div class="flex items-center gap-4">
         
-        <router-link to="/keranjang" class="relative p-2 text-gray-400 hover:text-white transition group">
-          <i class="fas fa-shopping-cart text-xl group-hover:text-rose-500 transition"></i>
-          <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-black">
-            {{ cartCount }}
-          </span>
-        </router-link>
-
         <template v-if="!isLoggedIn">
           <div class="flex items-center gap-3 border-l pl-4 border-gray-700">
-            <router-link to="/login" class="text-sm font-bold text-gray-300 hover:text-white transition">LOGIN</router-link>
+            <router-link to="/login" class="text-sm font-bold text-gray-300 hover:text-white transition uppercase tracking-wide">
+              LOGIN
+            </router-link>
             <router-link to="/register" class="bg-rose-600 text-white text-sm font-bold px-6 py-2.5 rounded-full hover:bg-rose-700 hover:shadow-[0_0_15px_rgba(225,29,72,0.5)] transition uppercase tracking-wide">
               DAFTAR
             </router-link>
           </div>
         </template>
 
-        <div v-else class="relative profile-box">
-          <button @click="toggleDropdown" class="flex items-center gap-2 focus:outline-none">
-            <img :src="`https://ui-avatars.com/api/?name=User&background=1f2937&color=fff`" class="w-9 h-9 rounded-full border-2 border-rose-600 shadow-lg hover:scale-105 transition" />
-          </button>
-
-          <transition name="scale">
-            <div v-if="profileMenu" class="absolute right-0 mt-4 w-56 bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-800 overflow-hidden z-50">
-              <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
-                <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Akun Member</p>
+        <template v-else>
+          <div class="flex items-center gap-4">
+            
+            <router-link to="/keranjang" class="relative group p-2">
+              <div class="text-gray-300 group-hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                </svg>
               </div>
-              <router-link to="/profile" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
-                <i class="fas fa-user"></i> Profil Saya
-              </router-link>
-              <router-link to="/riwayat" class="px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition flex items-center gap-3">
-                <i class="fas fa-history"></i> Riwayat Sewa
-              </router-link>
-              <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700 flex items-center gap-3">
-                <i class="fas fa-sign-out-alt"></i> Logout
+              
+              <span v-if="cartCount > 0" class="absolute top-0 right-0 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-black shadow-sm transform scale-100 group-hover:scale-110 transition">
+                {{ cartCount }}
+              </span>
+            </router-link>
+
+            <div class="relative profile-box border-l pl-4 border-gray-700">
+              <button @click="toggleDropdown" class="flex items-center gap-2 focus:outline-none">
+                <img :src="`https://ui-avatars.com/api/?name=User&background=1f2937&color=fff`" class="w-10 h-10 rounded-full border-2 border-rose-600 shadow-lg hover:scale-105 transition" />
               </button>
+
+              <transition name="scale">
+                <div v-if="profileMenu" class="absolute right-0 mt-4 w-56 bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-800 overflow-hidden z-50">
+                  <div class="px-5 py-4 bg-[#222] border-b border-gray-700">
+                    <p class="text-xs text-gray-400 uppercase font-bold tracking-wider">Akun Member</p>
+                  </div>
+                  <router-link to="/profile" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">
+                    Profil Saya
+                  </router-link>
+                  <router-link to="/riwayat" class="block px-5 py-3 text-sm text-gray-300 hover:bg-rose-600 hover:text-white transition">
+                    Riwayat Sewa
+                  </router-link>
+                  <button @click="logout" class="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-900/30 transition border-t border-gray-700">
+                    Logout
+                  </button>
+                </div>
+              </transition>
             </div>
-          </transition>
-        </div>
+
+          </div>
+        </template>
 
       </div>
     </div>
@@ -80,9 +93,19 @@ const profileMenu = ref(false);
 const toggleDropdown = () => { profileMenu.value = !profileMenu.value; };
 
 const updateState = () => {
-  isLoggedIn.value = !!localStorage.getItem("buyer_token");
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  cartCount.value = cart.length;
+  // 1. Cek Token (Apakah sudah login?)
+  const token = localStorage.getItem("buyer_token");
+  isLoggedIn.value = !!token;
+
+  // 2. Logic Keranjang
+  if (token) {
+    // HANYA jika login, hitung isi keranjang
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cartCount.value = cart.length;
+  } else {
+    // Jika TIDAK login, paksa 0 (Meskipun di localStorage ada data)
+    cartCount.value = 0;
+  }
 };
 
 onMounted(() => {
@@ -100,23 +123,25 @@ const logout = async () => {
     const token = localStorage.getItem("buyer_token");
     await axios.post("/api/buyer/logout", {}, { headers: { Authorization: `Bearer ${token}` } });
   } catch (e) {}
+  
   localStorage.removeItem("buyer_token");
-  updateState();
+  
+  // Opsional: Hapus keranjang saat logout agar bersih total
+  // localStorage.removeItem("cart"); 
+
+  updateState(); // Ini akan memicu cartCount jadi 0
   profileMenu.value = false;
   router.push("/");
 };
 </script>
 
 <style scoped>
-/* Styling Pill Navigation */
 .nav-link { 
   @apply px-5 py-2 text-sm font-bold text-gray-400 rounded-full hover:text-white transition-all duration-300 uppercase tracking-wide; 
 }
 .active-link { 
   @apply text-white bg-white/10 shadow-inner; 
 }
-
-/* Animasi Dropdown */
 .scale-enter-active, .scale-leave-active { transition: all 0.2s ease; }
 .scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
