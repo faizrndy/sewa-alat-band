@@ -5,17 +5,25 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use App\Models\Review;
 use App\Models\Faq;
+
+// --- DAFTAR CONTROLLER ---
 use App\Http\Controllers\AlatBandController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TransaksiController;
 use App\Http\Controllers\Api\MidtransController;
 use App\Http\Controllers\Api\AdminTransaksiController;
 
+// [PENTING] Import Controller Dashboard yang baru dibuat
+use App\Http\Controllers\Api\Admin\DashboardController; 
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC API (Bisa diakses tanpa login)
 |--------------------------------------------------------------------------
 */
+
+// Cek Ketersediaan Alat (Untuk Booking)
+Route::post('/alat-band/check-availability', [TransaksiController::class, 'checkAvailability']);
 
 // 1. ALAT BAND
 Route::get('/alat-band', [AlatBandController::class, 'apiIndex']);
@@ -29,11 +37,14 @@ Route::get('/faqs', fn() => Faq::all());
 Route::get('/ping', fn() => response()->json(['message' => 'API aktif!']));
 
 // 3. AUTHENTICATION (Umum untuk Admin & Buyer)
-Route::post('/register', [AuthController::class, 'register']); // Sebelumnya registerBuyer
-Route::post('/login', [AuthController::class, 'login']);       // Sebelumnya loginBuyer
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
-// 4. MIDTRANS CALLBACK
+// 4. MIDTRANS INTEGRATION
+// Callback dari Midtrans (Webhook)
 Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
+// Endpoint untuk membuat transaksi ke Midtrans
+Route::post('/midtrans/create-transaction', [MidtransController::class, 'createTransaction']);
 
 // 5. TEST WHATSAPP (Opsional)
 Route::get('/test-wa', function () {
@@ -53,7 +64,7 @@ Route::get('/test-wa', function () {
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // === MODULE TRANSAKSI ===
+    // === MODULE TRANSAKSI (Customer) ===
     Route::post('/transaksi', [TransaksiController::class, 'store']);
     Route::get('/riwayat/{telepon}', [TransaksiController::class, 'riwayat']);
 
@@ -63,12 +74,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/buyer/logout', [AuthController::class, 'logout']);
 
     // === MODULE ADMIN ===
-    // Kelola Transaksi
+    
+    // 1. Dashboard (INI YANG BARU DITAMBAHKAN)
+    Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+
+    // 2. Kelola Transaksi
     Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
     Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
     
-    // Kelola Alat Band (CRUD)
+    // 3. Kelola Alat Band (CRUD)
     Route::post('/alat-band', [AlatBandController::class, 'store']); // Tambah
-    Route::post('/alat-band/{id}', [AlatBandController::class, 'update']); // Update (pakai POST utk handle file)
+    Route::post('/alat-band/{id}', [AlatBandController::class, 'update']); // Update
     Route::delete('/alat-band/{id}', [AlatBandController::class, 'destroy']); // Hapus
 });

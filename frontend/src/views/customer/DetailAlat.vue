@@ -75,25 +75,27 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import Navbar from "@/components/Navbar.vue"
 import Swal from 'sweetalert2'
 
 const route = useRoute()
+const router = useRouter()
 const alat = ref(null)
 const loading = ref(true)
 const tanggalMulai = ref('')
 const tanggalSelesai = ref('')
 const jumlah = ref(1)
 
-// FIXED: Hapus '/storage'
+// Helper Image URL
 const getImgUrl = (path) => {
   if (!path) return 'https://placehold.co/600x400/1a1a1a/FFF?text=No+Image';
   if (path.startsWith('http')) return path;
   return `http://127.0.0.1:8000/${path}`;
 }
 
+// Fetch Data Alat
 const getAlat = async () => {
   try {
     const res = await axios.get(`/api/alat-band/${route.params.id}`)
@@ -103,6 +105,7 @@ const getAlat = async () => {
 }
 onMounted(getAlat)
 
+// Hitung Lama Sewa
 const lamaSewa = computed(() => {
   if (!tanggalMulai.value || !tanggalSelesai.value) return 0
   const start = new Date(tanggalMulai.value)
@@ -111,32 +114,88 @@ const lamaSewa = computed(() => {
   return diff > 0 ? diff : 0
 })
 
+// Hitung Total Biaya
 const totalBiaya = computed(() => alat.value ? lamaSewa.value * alat.value.harga_sewa * jumlah.value : 0)
 
-const tambahKeranjang = () => {
-  const Toast = Swal.mixin({
-    toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
-    background: '#151515', color: '#fff', iconColor: '#e11d48',
-    didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
-  })
+// Fungsi Tambah Keranjang
+const tambahKeranjang = async () => { 
+  // 1. CEK LOGIN
+  const token = localStorage.getItem("buyer_token");
+  if (!token) {
+    Swal.fire({ icon: 'info', title: 'Login Dulu Yuk!', text: 'Kamu harus login sebelum sewa alat.', background: '#151515', color: '#fff', confirmButtonText: 'Login Sekarang' }).then((result) => {
+      if (result.isConfirmed) router.push('/login');
+    });
+    return;
+  }
 
-  if (!tanggalMulai.value || !tanggalSelesai.value) { Toast.fire({ icon: 'warning', title: 'Pilih tanggal sewa dulu bos!' }); return; }
-  if (lamaSewa.value <= 0) { Toast.fire({ icon: 'error', title: 'Tanggal selesai harus setelah mulai!' }); return; }
+  // 2. VALIDASI INPUT WAJIB
+  if (!tanggalMulai.value || !tanggalSelesai.value) { 
+    Swal.fire({ icon: 'warning', title: 'Pilih tanggal sewa dulu!', background: '#151515', color: '#fff' });
+    return; 
+  }
+  if (lamaSewa.value <= 0) { 
+    Swal.fire({ icon: 'error', title: 'Tanggal selesai salah!', background: '#151515', color: '#fff' });
+    return; 
+  }
+  if (jumlah.value <= 0) {
+    Swal.fire({ icon: 'warning', title: 'Jumlah harus lebih dari 0!', background: '#151515', color: '#fff' });
+    return; 
+  }
 
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-  const existingItem = cart.find(item => item.id === alat.value.id && item.tanggalMulai === tanggalMulai.value && item.tanggalSelesai === tanggalSelesai.value);
+  // 3. 🔥 CEK KETERSEDIAAN ALAT DENGAN API 🔥
+  try {
+      const checkRes = await axios.post('/api/alat-band/check-availability', {
+          alat_id: alat.value.id,
+          tanggal_mulai: tanggalMulai.value,
+          tanggal_selesai: tanggalSelesai.value,
+          // FIX: Gunakan 'jumlah_diminta' agar sesuai validasi Laravel
+          jumlah_diminta: jumlah.value, 
+      });
+
+      if (!checkRes.data.available) {
+          Swal.fire({ 
+              icon: 'error', 
+              title: 'Stok Tidak Cukup!', 
+              text: checkRes.data.message, 
+              background: '#151515', color: '#fff' 
+          });
+          return;
+      }
+      
+  } catch (err) {
+      const msg = err.response?.data?.message || 'Terjadi kesalahan saat mengecek stok.';
+      Swal.fire({ icon: 'error', title: 'Gagal Validasi', text: msg, background: '#151515', color: '#fff' });
+      return;
+  }
   
-  if (existingItem) { existingItem.jumlah += jumlah.value; } 
-  else {
+  // 4. JIKA LOLOS VALIDASI, BARU SIMPAN KE KERANJANG
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  
+  // Cek apakah item yang sama persis sudah ada
+  const existingItem = cart.find(item => 
+      item.id === alat.value.id && 
+      item.tanggalMulai === tanggalMulai.value && 
+      item.tanggalSelesai === tanggalSelesai.value
+  );
+  
+  if (existingItem) { 
+      existingItem.jumlah += jumlah.value; 
+  } else {
       cart.push({
-          id: alat.value.id, nama_alat: alat.value.nama_alat, gambar: alat.value.gambar,
-          harga_sewa: alat.value.harga_sewa, jumlah: jumlah.value,
-          tanggalMulai: tanggalMulai.value, tanggalSelesai: tanggalSelesai.value,
+          id: alat.value.id, 
+          nama_alat: alat.value.nama_alat, 
+          gambar: alat.value.gambar,
+          harga_sewa: alat.value.harga_sewa, 
+          jumlah: jumlah.value,
+          tanggalMulai: tanggalMulai.value, 
+          tanggalSelesai: tanggalSelesai.value,
       })
   }
+  
   localStorage.setItem('cart', JSON.stringify(cart))
   window.dispatchEvent(new Event('cart-updated'))
-  Toast.fire({ icon: 'success', title: 'Sip! Gear masuk keranjang 🤘' })
+  
+  Swal.fire({ icon: 'success', title: 'Sip! Gear masuk keranjang 🤘', background: '#151515', color: '#fff', timer: 1500, showConfirmButton: false });
 }
 </script>
 
