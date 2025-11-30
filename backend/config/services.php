@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+    | as Mailgun, Postmark, AWS, Midtrans, and more. This file provides the de facto
     | location for this type of information, allowing packages to have
     | a conventional file to locate the various service credentials.
     |
@@ -33,6 +33,25 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Midtrans Payment Gateway
+    |--------------------------------------------------------------------------
+    |
+    | Konfigurasi untuk integrasi Midtrans.
+    | Kunci diambil dari file .env.
+    |
+    */
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'merchant_id' => env('MIDTRANS_MERCHANT_ID'),
+        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'is_sanitized' => env('MIDTRANS_SANITIZED', true),
+        'is_3ds' => env('MIDTRANS_3DS', true),
+        'snap_url' => env('MIDTRANS_SNAP_URL', 'https://app.sandbox.midtrans.com/snap/snap.js'),
     ],
 
 ];

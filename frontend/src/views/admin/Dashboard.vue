@@ -1,78 +1,136 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0a] text-white font-sans flex">
-    
-    <aside class="w-64 bg-[#111] border-r border-gray-800 hidden md:flex flex-col fixed h-full">
-      <div class="p-6 border-b border-gray-800">
-        <h2 class="text-2xl font-black italic tracking-tighter text-white">KRATAK <span class="text-indigo-500">ADMIN</span></h2>
-      </div>
-      <nav class="flex-1 p-4 space-y-2">
-        <router-link to="/admin/dashboard" class="nav-item" active-class="active">
-          <i class="fas fa-home w-6"></i> Dashboard
-        </router-link>
-        <router-link to="/admin/alat" class="nav-item" active-class="active">
-          <i class="fas fa-guitar w-6"></i> Kelola Alat
-        </router-link>
-        <router-link to="/admin/transaksi" class="nav-item" active-class="active">
-          <i class="fas fa-file-invoice-dollar w-6"></i> Transaksi
-        </router-link>
-      </nav>
-      <div class="p-4 border-t border-gray-800">
-        <button @click="logout" class="w-full text-left px-4 py-3 text-red-500 hover:bg-red-900/10 rounded-xl transition flex items-center gap-3 font-bold">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
-      </div>
-    </aside>
+  <div>
+    <h1 class="text-3xl font-bold mb-8">Dashboard Overview</h1>
+    <p class="text-gray-400 mb-6">Selamat datang kembali, Admin.</p>
 
-    <main class="flex-1 md:ml-64 p-8">
-      <header class="flex justify-between items-center mb-8">
-        <div>
-          <h1 class="text-3xl font-bold">Dashboard Overview</h1>
-          <p class="text-gray-500">Selamat datang kembali, Admin.</p>
-        </div>
-      </header>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="card-stat bg-indigo-900/20 border-indigo-500/30">
-          <h3 class="text-indigo-400 text-sm font-bold uppercase">Total Alat</h3>
-          <p class="text-4xl font-black mt-2">120</p>
-        </div>
-        <div class="card-stat bg-green-900/20 border-green-500/30">
-          <h3 class="text-green-400 text-sm font-bold uppercase">Pendapatan</h3>
-          <p class="text-4xl font-black mt-2">Rp 15jt</p>
-        </div>
-        <div class="card-stat bg-orange-900/20 border-orange-500/30">
-          <h3 class="text-orange-400 text-sm font-bold uppercase">Perlu Diproses</h3>
-          <p class="text-4xl font-black mt-2">5</p>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 bg-indigo-600/10 w-32 h-32 rounded-full group-hover:bg-indigo-600/20 transition duration-500"></div>
+        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Alat</p>
+        <h2 class="text-4xl font-bold text-white">{{ stats.total_alat }}</h2>
       </div>
 
-      <div class="bg-[#151515] p-8 rounded-3xl border border-gray-800 text-center py-20">
-        <i class="fas fa-chart-line text-6xl text-gray-700 mb-4"></i>
-        <p class="text-gray-500">Grafik statistik akan muncul di sini.</p>
+      <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 bg-green-600/10 w-32 h-32 rounded-full group-hover:bg-green-600/20 transition duration-500"></div>
+        <p class="text-green-500 text-xs font-bold uppercase tracking-wider mb-1">Pendapatan</p>
+        <h2 class="text-4xl font-bold text-white">Rp {{ formatJuta(stats.pendapatan) }}</h2>
       </div>
-    </main>
+
+      <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 bg-orange-600/10 w-32 h-32 rounded-full group-hover:bg-orange-600/20 transition duration-500"></div>
+        <p class="text-orange-500 text-xs font-bold uppercase tracking-wider mb-1">Perlu Diproses</p>
+        <h2 class="text-4xl font-bold text-white">{{ stats.perlu_diproses }}</h2>
+      </div>
+    </div>
+
+    <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 mb-8">
+      <h3 class="text-xl font-bold mb-6">Statistik Pendapatan Tahun Ini</h3>
+      <div class="h-80 w-full relative">
+        <Bar v-if="!loading && chartData" :data="chartData" :options="chartOptions" />
+        
+        <div v-else class="flex items-center justify-center h-full text-gray-500">
+            <div class="animate-spin h-6 w-6 border-2 border-indigo-500 rounded-full border-t-transparent mr-2"></div>
+            Memuat Grafik...
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+// Import komponen Chart.js
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale
+} from 'chart.js';
+import { Bar } from 'vue-chartjs';
 
-const router = useRouter();
+// Registrasi modul Chart
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const logout = async () => {
-  try {
-    const token = localStorage.getItem('admin_token');
-    await axios.post('/api/buyer/logout', {}, { headers: { Authorization: `Bearer ${token}` } });
-  } catch (e) {}
-  localStorage.removeItem('admin_token');
-  localStorage.removeItem('user_role');
-  router.push('/admin/login');
+// State Data
+const stats = ref({
+    total_alat: 0,
+    pendapatan: 0,
+    perlu_diproses: 0,
+    grafik_per_bulan: [] 
+});
+
+const loading = ref(true);
+
+// Format Angka Juta (Rp 15jt)
+const formatJuta = (num) => {
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace('.0', '') + 'jt';
+    return (num / 1000).toFixed(0) + 'rb';
 };
-</script>
 
-<style scoped>
-.nav-item { @apply flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition font-medium; }
-.active { @apply bg-indigo-600 text-white shadow-lg shadow-indigo-900/50; }
-.card-stat { @apply p-6 rounded-2xl border border-dashed; }
-</style>
+// Data untuk Grafik
+const chartData = computed(() => {
+  return {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+    datasets: [
+      {
+        label: 'Pendapatan (Rp)',
+        backgroundColor: '#6366f1', // Warna Ungu
+        borderRadius: 6,
+        data: stats.value.grafik_per_bulan // Data dari Backend
+      }
+    ]
+  };
+});
+
+// Opsi Tampilan Grafik
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false }, // Sembunyikan legenda
+    tooltip: {
+       callbacks: {
+           label: (context) => 'Rp ' + context.raw.toLocaleString('id-ID')
+       }
+    }
+  },
+  scales: {
+    y: {
+      grid: { color: '#333' },
+      ticks: { color: '#9ca3af' },
+      beginAtZero: true
+    },
+    x: {
+      grid: { display: false },
+      ticks: { color: '#9ca3af' }
+    }
+  }
+};
+
+// Load Data dari API
+const loadDashboard = async () => {
+    loading.value = true;
+    try {
+        const token = localStorage.getItem('admin_token');
+        const res = await axios.get('/api/admin/dashboard', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Simpan data dari backend ke state
+        stats.value = res.data; 
+        
+    } catch (e) {
+        console.error("Gagal load dashboard", e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+onMounted(loadDashboard);
+</script>

@@ -6,7 +6,7 @@
          <h1 class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter">
            Checkout <span class="text-rose-600">&</span> Payment
          </h1>
-         <p class="text-gray-500 mt-2 text-sm md:text-base">Mode Sandbox (Test) Aktif.</p>
+         <p class="text-gray-500 mt-2 text-sm md:text-base">Lengkapi data buat selesaikan bookingan lo.</p>
       </div>
 
       <div class="lg:col-span-2 space-y-6">
@@ -19,11 +19,7 @@
           <div class="space-y-4">
             <div v-for="item in itemsKeranjang" :key="item.id" class="flex gap-4 bg-black/40 p-4 rounded-2xl border border-gray-800/50">
               <div class="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-white rounded-xl overflow-hidden">
-                <img 
-                  :src="getImgUrl(item.gambar)" 
-                  @error="$event.target.src = 'https://placehold.co/150x150/1a1a1a/FFF?text=No+Image'"
-                  class="w-full h-full object-contain p-1"
-                />
+                <img :src="getImgUrl(item.gambar)" class="w-full h-full object-contain p-1" @error="$event.target.src = 'https://placehold.co/150x150/1a1a1a/FFF?text=No+Image'"/>
               </div>
               <div class="flex-1 flex flex-col justify-center">
                 <h3 class="font-black text-white text-base md:text-lg uppercase italic leading-tight">{{ item.nama_alat }}</h3>
@@ -31,12 +27,8 @@
                   {{ item.tanggalMulai }} <span class="text-rose-500">➜</span> {{ item.tanggalSelesai }}
                 </div>
                 <div class="mt-2 flex items-center justify-between">
-                  <p class="text-xs text-gray-400">
-                    Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.jumlah }} Unit
-                  </p>
-                  <p class="font-bold text-white">
-                    Total: Rp {{ (hitungHari(item) * item.harga_sewa * item.jumlah).toLocaleString() }}
-                  </p>
+                  <p class="text-xs text-gray-400">Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.jumlah }} Unit</p>
+                  <p class="font-bold text-white">Total: Rp {{ (hitungHari(item) * item.harga_sewa * item.jumlah).toLocaleString() }}</p>
                 </div>
               </div>
             </div>
@@ -50,15 +42,25 @@
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div>
-               <label class="label-dark">Nama Lengkap</label>
-               <input v-model="nama" class="input-dark" type="text" placeholder="Nama Panggung / Asli" />
+               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nama Lengkap</label>
+               <input 
+                 v-model="nama" 
+                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700" 
+                 type="text" 
+                 placeholder="Nama Panggung / Asli" 
+               />
              </div>
              <div>
-               <label class="label-dark">WhatsApp</label>
-               <input v-model="telepon" class="input-dark" type="text" placeholder="0812..." />
+               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">WhatsApp</label>
+               <input 
+                 v-model="telepon" 
+                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700" 
+                 type="text" 
+                 placeholder="0812..." 
+               />
              </div>
              <div class="md:col-span-2">
-               <label class="label-dark">Identitas (KTP/SIM)</label>
+               <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Identitas (KTP/SIM)</label>
                <div class="relative border-2 border-dashed border-gray-700 bg-black/30 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-800 hover:border-rose-600 transition group">
                   <input type="file" @change="onIdentitas" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"/>
                   <div v-if="!fileIdentitas" class="flex flex-col items-center text-gray-500 group-hover:text-rose-500 transition">
@@ -84,15 +86,13 @@
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="ambil" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
               <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
-                <i class="fas fa-store text-2xl"></i> 
-                <span class="font-bold text-sm">Ambil Sendiri</span>
+                <i class="fas fa-store text-2xl"></i> <span class="font-bold text-sm">Ambil Sendiri</span>
               </div>
             </label>
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="antar" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
               <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
-                <i class="fas fa-truck-fast text-2xl"></i>
-                <span class="font-bold text-sm">Antar Kurir</span>
+                <i class="fas fa-truck-fast text-2xl"></i> <span class="font-bold text-sm">Antar Kurir</span>
               </div>
             </label>
           </div>
@@ -103,17 +103,17 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
-                  <label class="label-dark">Jarak</label>
-                  <div class="input-dark bg-black text-gray-400">{{ jarak.toFixed(1) }} km</div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Jarak</label>
+                  <div class="w-full bg-black border border-gray-700 text-gray-400 px-4 py-3 rounded-xl">{{ jarak.toFixed(1) }} km</div>
                </div>
                <div>
-                  <label class="label-dark">Ongkir</label>
-                  <div class="input-dark bg-black text-rose-500 font-bold">Rp {{ tarifAntar.toLocaleString() }}</div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ongkir</label>
+                  <div class="w-full bg-black border border-gray-700 text-rose-500 font-bold px-4 py-3 rounded-xl">Rp {{ tarifAntar.toLocaleString() }}</div>
                </div>
             </div>
             
-            <textarea v-model="alamat" class="input-dark" rows="2" readonly placeholder="Alamat otomatis..."></textarea>
-            <textarea v-model="deskripsiLokasi" class="input-dark" rows="2" placeholder="Detail patokan..."></textarea>
+            <textarea v-model="alamat" class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 outline-none" rows="2" readonly placeholder="Alamat otomatis..."></textarea>
+            <textarea v-model="deskripsiLokasi" class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 outline-none" rows="2" placeholder="Detail patokan..."></textarea>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@
              <span class="relative z-10 group-hover:scale-105 transition">{{ loading ? "Memproses..." : "BAYAR SEKARANG" }}</span>
           </button>
 
-          <p class="text-[10px] text-center text-gray-600 mt-4 uppercase tracking-widest">Secured by Midtrans Sandbox</p>
+          <p class="text-[10px] text-center text-gray-600 mt-4 uppercase tracking-widest">Secured by Midtrans</p>
         </div>
       </div>
 
@@ -161,14 +161,18 @@ import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import L from "leaflet";
 import Swal from "sweetalert2";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
+
+// State Form
 const nama = ref("");
 const telepon = ref("");
 const deskripsiLokasi = ref("");
-const fileIdentitas = ref(null);
-const onIdentitas = (e) => { fileIdentitas.value = e.target.files[0]; };
-
 const alamat = ref("");
+const fileIdentitas = ref(null);
+
+// State Peta
 const lat = ref(null);
 const lon = ref(null);
 const jarak = ref(0);
@@ -176,6 +180,39 @@ let map;
 let marker;
 const tokoLat = -7.568; 
 const tokoLon = 110.829;
+
+// --- [FUNGSI AUTO-FILL PROFILE YANG SUDAH DIPERBAIKI] ---
+const getProfile = async () => {
+  try {
+    const token = localStorage.getItem("buyer_token");
+    if (!token) return;
+
+    const res = await axios.get('/api/buyer/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // DEBUG: Cek di Console browser (F12) untuk melihat isi datanya
+    console.log("Response Profile:", res.data);
+
+    // PERBAIKAN LOGIC DISINI:
+    // Kita cek, apakah data user ada di dalam properti 'data'?
+    // Jika res.data.data ada, pakai itu. Jika tidak, pakai res.data langsung.
+    const user = res.data.data || res.data; 
+
+    // Isi Form Otomatis (Pastikan nama kolom database sesuai)
+    // Sesuai SQL Bos: 'nama_lengkap' dan 'nomor_telepon'
+    nama.value = user.nama_lengkap || user.name || "";
+    telepon.value = user.nomor_telepon || "";
+
+    console.log("Nama terisi:", nama.value); // Cek apakah masuk variable
+
+  } catch (e) {
+    console.error("Gagal auto-fill profile:", e);
+  }
+};
+// ---------------------------------------------------------
+
+const onIdentitas = (e) => { fileIdentitas.value = e.target.files[0]; };
 
 const getImgUrl = (path) => {
   if (!path) return 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image';
@@ -216,6 +253,8 @@ async function pilihLokasi(e) {
 }
 
 onMounted(() => {
+  getProfile(); // Panggil data profile saat halaman dimuat
+
   if(document.getElementById('map')) {
       map = L.map("map").setView([tokoLat, tokoLon], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
@@ -253,6 +292,13 @@ const kirimPembayaran = async () => {
   if (!fileIdentitas.value) { Swal.fire({ icon: 'warning', title: 'Identitas Wajib', text: 'Upload foto KTP/SIM asli.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
   if (metodePengiriman.value === 'antar' && (!lat.value)) { Swal.fire({ icon: 'warning', title: 'Lokasi Belum Ada', text: 'Klik peta dulu.', background: '#151515', color: '#fff', confirmButtonColor: '#e11d48' }); return; }
 
+  const token = localStorage.getItem("buyer_token");
+  if (!token) {
+      Swal.fire({ icon: 'error', title: 'Sesi Habis', text: 'Silakan login ulang dulu.', background: '#151515', color: '#fff' });
+      router.push('/login');
+      return;
+  }
+
   loading.value = true;
   try {
     const form = new FormData();
@@ -271,7 +317,10 @@ const kirimPembayaran = async () => {
     form.append("items", JSON.stringify(itemsKeranjang.value));
 
     const res = await axios.post("/api/transaksi", form, { 
-        headers: { "Content-Type": "multipart/form-data" } 
+        headers: { 
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}` 
+        } 
     });
     
     const snapToken = res.data.snap_token;
@@ -298,14 +347,11 @@ const kirimPembayaran = async () => {
         window.location.href = `/riwayat?telepon=${telepon.value}`;
     }
   } catch (err) {
-    // TAMPILKAN ERROR DETAIL DARI BACKEND
-    const errorTitle = "Server Error 😭";
-    const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Terjadi kesalahan.";
-    
+    const errorMsg = err.response?.data?.message || err.message || "Terjadi kesalahan server.";
     Swal.fire({
         icon: 'error',
-        title: errorTitle,
-        text: errorMsg, // <-- Ini yang penting!
+        title: 'Server Error 😭',
+        text: errorMsg, 
         background: '#151515',
         color: '#fff',
         confirmButtonColor: '#e11d48'
@@ -314,8 +360,3 @@ const kirimPembayaran = async () => {
   loading.value = false;
 };
 </script>
-
-<style scoped>
-.label-dark { @apply block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2; }
-.input-dark { @apply w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700; }
-</style>

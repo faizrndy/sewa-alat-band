@@ -33,6 +33,7 @@
             "@radix-ui/react-tooltip": "^1.1.8",
             "@vitejs/plugin-vue": "^6.0.1",
             "axios": "^1.13.2",
+            "chart.js": "^4.5.1",
             "class-variance-authority": "^0.7.1",
             "clsx": "*",
             "cmdk": "^1.1.1",
@@ -53,6 +54,7 @@
             "sweetalert2": "^11.26.3",
             "tailwind-merge": "*",
             "vaul": "^1.1.2",
+            "vue-chartjs": "^5.3.3",
             "vue-router": "^4.6.3"
       },
       "devDependencies": {
