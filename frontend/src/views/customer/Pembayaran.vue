@@ -45,7 +45,7 @@
                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nama Lengkap</label>
                <input 
                  v-model="nama" 
-                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700" 
+                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-600" 
                  type="text" 
                  placeholder="Nama Panggung / Asli" 
                />
@@ -54,7 +54,7 @@
                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">WhatsApp</label>
                <input 
                  v-model="telepon" 
-                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-700" 
+                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-600" 
                  type="text" 
                  placeholder="0812..." 
                />
@@ -172,7 +172,7 @@ const deskripsiLokasi = ref("");
 const alamat = ref("");
 const fileIdentitas = ref(null);
 
-// State Peta
+// State Peta & Lokasi
 const lat = ref(null);
 const lon = ref(null);
 const jarak = ref(0);
@@ -181,36 +181,45 @@ let marker;
 const tokoLat = -7.568; 
 const tokoLon = 110.829;
 
-// --- [FUNGSI AUTO-FILL PROFILE YANG SUDAH DIPERBAIKI] ---
+// --- [FUNGSI AUTO-FILL PROFILE - FINAL FIXED] ---
 const getProfile = async () => {
+  console.log("Memulai Auto-Fill Profile...");
   try {
     const token = localStorage.getItem("buyer_token");
-    if (!token) return;
+    if (!token) {
+        console.warn("Token tidak ditemukan di localStorage");
+        return;
+    }
 
     const res = await axios.get('/api/buyer/profile', {
         headers: { Authorization: `Bearer ${token}` }
     });
 
-    // DEBUG: Cek di Console browser (F12) untuk melihat isi datanya
-    console.log("Response Profile:", res.data);
+    console.log("Response Profile:", res.data); // Debugging
 
-    // PERBAIKAN LOGIC DISINI:
-    // Kita cek, apakah data user ada di dalam properti 'data'?
-    // Jika res.data.data ada, pakai itu. Jika tidak, pakai res.data langsung.
-    const user = res.data.data || res.data; 
+    // PERBAIKAN PENTING: Ambil data dari pembungkus '.user' jika ada
+    let user = null;
+    
+    if (res.data.user) {
+        user = res.data.user; // Priority 1: Sesuai Screenshot Console
+    } else if (res.data.data) {
+        user = res.data.data; // Priority 2
+    } else {
+        user = res.data;      // Priority 3
+    }
 
-    // Isi Form Otomatis (Pastikan nama kolom database sesuai)
-    // Sesuai SQL Bos: 'nama_lengkap' dan 'nomor_telepon'
-    nama.value = user.nama_lengkap || user.name || "";
-    telepon.value = user.nomor_telepon || "";
-
-    console.log("Nama terisi:", nama.value); // Cek apakah masuk variable
+    if (user) {
+        // Logika Pengisian
+        nama.value = user.nama_lengkap || user.name || "";
+        telepon.value = user.nomor_telepon || "";
+        console.log("Berhasil Mengisi Form:", { nama: nama.value, telepon: telepon.value });
+    }
 
   } catch (e) {
-    console.error("Gagal auto-fill profile:", e);
+    console.error("Gagal ambil profile:", e);
   }
 };
-// ---------------------------------------------------------
+// ------------------------------------------
 
 const onIdentitas = (e) => { fileIdentitas.value = e.target.files[0]; };
 
@@ -253,7 +262,7 @@ async function pilihLokasi(e) {
 }
 
 onMounted(() => {
-  getProfile(); // Panggil data profile saat halaman dimuat
+  getProfile(); // <--- Pastikan ini dipanggil
 
   if(document.getElementById('map')) {
       map = L.map("map").setView([tokoLat, tokoLon], 13);
