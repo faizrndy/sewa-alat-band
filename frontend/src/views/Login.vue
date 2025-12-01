@@ -20,7 +20,7 @@
           <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition">
+        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition disabled:opacity-50">
           {{ loading ? 'Loading...' : 'Gass Masuk' }}
         </button>
       </form>
@@ -39,7 +39,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import Swal from 'sweetalert2' // Pastikan ini sudah diinstall via npm
+import Swal from 'sweetalert2' 
 
 const router = useRouter()
 const form = ref({ email: '', password: '' })
@@ -49,36 +49,47 @@ const login = async () => {
   loading.value = true
   try {
     const res = await axios.post('/api/login', form.value)
+    
+    // 1. Simpan Token
     localStorage.setItem('buyer_token', res.data.token)
     
-    // Bersihkan keranjang lama agar tidak nyampur
-    localStorage.removeItem('cart'); 
+    // 2. Simpan Data User (PENTING BUAT KUNCI KERANJANG)
+    if (res.data.user) {
+        localStorage.setItem('user_data', JSON.stringify(res.data.user));
+        
+        // --- LOGIC PINDAHKAN KERANJANG TAMU KE USER ---
+        const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
+        if (guestCart.length > 0) {
+            const userKey = `cart_${res.data.user.id}`;
+            // Gabungkan atau timpa? Di sini kita timpa saja biar simpel
+            // Atau logic gabung: [...userCart, ...guestCart]
+            localStorage.setItem(userKey, JSON.stringify(guestCart));
+            localStorage.removeItem('cart_guest'); // Kosongkan tamu
+        }
+    }
+
     window.dispatchEvent(new Event('cart-updated'));
 
-    // SWEETALERT SUKSES
     Swal.fire({
       icon: 'success',
       title: 'Welcome Back!',
       text: 'Siap guncang panggung lagi?',
-      background: '#151515',
-      color: '#fff',
-      iconColor: '#e11d48',
-      confirmButtonColor: '#e11d48',
-      timer: 1500,
-      showConfirmButton: false
+      background: '#151515', color: '#fff', 
+      iconColor: '#e11d48', confirmButtonColor: '#e11d48',
+      timer: 1500, showConfirmButton: false
     }).then(() => {
-       router.push('/')
+       if(res.data.user.role === 'admin') {
+           window.location.href = '/admin/dashboard';
+       } else {
+           router.push('/');
+       }
     })
 
   } catch (err) { 
-    // SWEETALERT ERROR
     Swal.fire({
-      icon: 'error',
-      title: 'Gagal Masuk',
-      text: 'Email atau password salah bro.',
-      background: '#151515',
-      color: '#fff',
-      confirmButtonColor: '#e11d48'
+      icon: 'error', title: 'Gagal Masuk',
+      text: err.response?.data?.message || 'Email atau password salah bro.',
+      background: '#151515', color: '#fff', confirmButtonColor: '#e11d48'
     });
   } 
   finally { loading.value = false }

@@ -119,7 +119,7 @@ const totalBiaya = computed(() => alat.value ? lamaSewa.value * alat.value.harga
 
 // Fungsi Tambah Keranjang
 const tambahKeranjang = async () => { 
-  // 1. CEK LOGIN
+  // 1. CEK LOGIN & TOKEN
   const token = localStorage.getItem("buyer_token");
   if (!token) {
     Swal.fire({ icon: 'info', title: 'Login Dulu Yuk!', text: 'Kamu harus login sebelum sewa alat.', background: '#151515', color: '#fff', confirmButtonText: 'Login Sekarang' }).then((result) => {
@@ -148,7 +148,6 @@ const tambahKeranjang = async () => {
           alat_id: alat.value.id,
           tanggal_mulai: tanggalMulai.value,
           tanggal_selesai: tanggalSelesai.value,
-          // FIX: Gunakan 'jumlah_diminta' agar sesuai validasi Laravel
           jumlah_diminta: jumlah.value, 
       });
 
@@ -168,10 +167,23 @@ const tambahKeranjang = async () => {
       return;
   }
   
-  // 4. JIKA LOLOS VALIDASI, BARU SIMPAN KE KERANJANG
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  // 4. JIKA LOLOS VALIDASI, SIMPAN KE KERANJANG
+  let cartKey = 'cart_guest';
   
-  // Cek apakah item yang sama persis sudah ada
+  // Ambil data user dari localStorage
+  const userDataStr = localStorage.getItem("user_data");
+
+  // Logic: Kalau token ada & user data ada, pakai cart_ID
+  if (token && userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      if (userData.id) {
+          cartKey = `cart_${userData.id}`;
+      }
+  }
+
+  const cart = JSON.parse(localStorage.getItem(cartKey) || '[]');
+  
+  // Cek duplikat item
   const existingItem = cart.find(item => 
       item.id === alat.value.id && 
       item.tanggalMulai === tanggalMulai.value && 
@@ -192,8 +204,8 @@ const tambahKeranjang = async () => {
       })
   }
   
-  localStorage.setItem('cart', JSON.stringify(cart))
-  window.dispatchEvent(new Event('cart-updated'))
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+  window.dispatchEvent(new Event('cart-updated'));
   
   Swal.fire({ icon: 'success', title: 'Sip! Gear masuk keranjang 🤘', background: '#151515', color: '#fff', timer: 1500, showConfirmButton: false });
 }

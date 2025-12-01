@@ -9,49 +9,59 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RiwayatController extends Controller
 {
+    /**
+     * Lihat Semua Data Riwayat
+     */
     public function index()
     {
-        $transaksi = Transaksi::latest()->get();
-        return view('riwayat.index', compact('transaksi'));
+        // Ambil data terbaru dengan item-nya
+        $transaksi = Transaksi::with('items')->latest()->get();
+        return response()->json($transaksi);
     }
 
+    /**
+     * Detail Satu Transaksi
+     */
     public function show($id)
     {
-        $trx = Transaksi::with('items')->findOrFail($id);
-        return view('riwayat.show', compact('trx'));
+        $trx = Transaksi::with('items')->find($id);
+
+        if (!$trx) {
+            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+        }
+
+        return response()->json($trx);
     }
 
+    /**
+     * Update Status Transaksi
+     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,success,failed'
+            'status' => 'required|in:pending,success,failed,settlement,expired,cancelled'
         ]);
 
         $trx = Transaksi::findOrFail($id);
         $trx->status = $request->status;
         $trx->save();
 
-        return redirect()
-            ->route('riwayat.show', $id)
-            ->with('success', 'Status transaksi berhasil diperbarui!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Status transaksi berhasil diperbarui!',
+            'data' => $trx
+        ]);
     }
 
     /**
-     * CETAK NOTA
+     * Download Nota PDF
      */
-    public function showNota($id)
+    public function cetakPDF($id)
     {
         $trx = Transaksi::with('items')->findOrFail($id);
-        return view('riwayat.nota', compact('trx'));
+        
+        $pdf = Pdf::loadView('riwayat.pdf', compact('trx'))->setPaper('A4', 'portrait');
+
+        return $pdf->download('Nota-'.$trx->kode_transaksi.'.pdf');
     }
-
-
-public function cetakPDF($id)
-{
-    $trx = Transaksi::with('items')->findOrFail($id);
-
-    $pdf = Pdf::loadView('riwayat.pdf', compact('trx'))->setPaper('A4', 'portrait');
-
-    return $pdf->download('Nota-'.$trx->kode_transaksi.'.pdf');
-}
 }

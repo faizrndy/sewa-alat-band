@@ -1,124 +1,161 @@
 <template>
   <div class="min-h-screen bg-[#0a0a0a] text-white pt-28 pb-12 font-sans">
-    <div class="max-w-6xl mx-auto px-6">
-      <h1 class="text-3xl font-black italic uppercase tracking-tighter mb-8 flex items-center gap-3">
-        🛒 Gear <span class="text-rose-600">Cart</span> 
-        <span class="text-lg font-normal text-gray-500 not-italic tracking-normal">({{ cart.length }} item)</span>
-      </h1>
+    <div class="max-w-7xl mx-auto px-6">
+      
+      <div class="flex items-center gap-3 mb-8">
+        <i class="fas fa-cart-shopping text-3xl text-rose-600"></i>
+        <h1 class="text-3xl font-black italic uppercase tracking-tighter">
+          Gear <span class="text-rose-600">Cart</span> 
+          <span class="text-sm font-normal text-gray-500 ml-2">({{ cartItems.length }} Item)</span>
+        </h1>
+      </div>
 
-      <div v-if="cart.length === 0" class="text-center bg-[#151515] rounded-3xl p-16 border border-gray-800 border-dashed">
-        <div class="text-6xl mb-4 opacity-50">🎸</div>
-        <h3 class="text-xl font-bold text-gray-300 uppercase">Keranjang Kosong</h3>
-        <p v-if="!isLoggedIn" class="text-gray-500 mt-2 text-sm">Kamu belum login. Login dulu biar data tersimpan.</p>
-        
-        <div class="mt-6 flex justify-center gap-4">
-            <router-link to="/katalog" class="bg-rose-600 text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-rose-700 transition shadow-[0_0_15px_rgba(225,29,72,0.4)]">
-            Cari Gear
-            </router-link>
-            <router-link v-if="!isLoggedIn" to="/login" class="border border-gray-600 text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-gray-800 transition">
-            Login Dulu
-            </router-link>
-        </div>
+      <div v-if="cartItems.length === 0" class="flex flex-col items-center justify-center py-20 bg-[#151515] rounded-3xl border border-gray-800 border-dashed">
+        <i class="fas fa-guitar text-6xl text-gray-700 mb-4"></i>
+        <h2 class="text-xl font-bold text-gray-400 mb-2 uppercase">Keranjang Kosong</h2>
+        <router-link to="/katalog" class="mt-4 bg-rose-600 text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-rose-700 transition shadow-[0_0_15px_rgba(225,29,72,0.4)]">
+          Cari Gear
+        </router-link>
       </div>
 
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-2 space-y-4">
-          <div v-for="(item, index) in cart" :key="item.id" class="bg-[#151515] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center group hover:border-rose-600/30 transition">
-            <div class="w-24 h-24 flex-shrink-0 bg-black rounded-xl overflow-hidden border border-gray-800">
-               <img :src="getImgUrl(item.gambar)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition" />
+          <div v-for="(item, index) in cartItems" :key="index" class="bg-[#151515] p-4 rounded-2xl border border-gray-800 flex gap-4 hover:border-gray-700 transition group relative overflow-hidden">
+            
+            <div class="w-24 h-24 bg-white rounded-xl flex-shrink-0 p-2">
+              <img :src="getImgUrl(item.gambar)" class="w-full h-full object-contain" />
             </div>
-            <div class="flex-1">
-              <h3 class="font-black text-white text-lg uppercase italic">{{ item.nama_alat }}</h3>
-              <p class="text-xs text-gray-500 mt-1 font-mono">
-                {{ item.tanggalMulai }} <span class="text-rose-500">➜</span> {{ item.tanggalSelesai }} 
-                <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded ml-2 font-bold text-[10px]">{{ hitungHari(item) }} HARI</span>
-              </p>
-              <div class="mt-2 flex items-center justify-between">
-                <p class="text-sm text-gray-400">Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.jumlah }} unit</p>
-                <p class="font-bold text-rose-500">Rp {{ hitungSubtotal(item).toLocaleString() }}</p>
+
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <h3 class="font-black text-lg uppercase italic leading-none mb-1">{{ item.nama_alat }}</h3>
+                <div class="text-xs text-gray-500 font-mono flex items-center gap-2">
+                   <span>{{ item.tanggalMulai }}</span> 
+                   <i class="fas fa-arrow-right text-[10px] text-rose-500"></i> 
+                   <span>{{ item.tanggalSelesai }}</span>
+                   <span class="bg-gray-800 px-2 py-0.5 rounded text-[10px] text-white">{{ hitungHari(item) }} Hari</span>
+                </div>
+              </div>
+
+              <div class="flex items-end justify-between mt-2">
+                <p class="text-rose-500 font-bold">Rp {{ Number(item.harga_sewa).toLocaleString() }} <span class="text-xs text-gray-500 font-normal">x {{ item.jumlah }} Unit</span></p>
+                
+                <button @click="hapusItem(index)" class="text-gray-600 hover:text-red-500 transition p-2">
+                  <i class="fas fa-trash"></i>
+                </button>
               </div>
             </div>
-            <button @click="hapusItem(index)" class="p-3 text-gray-600 hover:text-red-500 hover:bg-red-900/20 rounded-xl transition"><i class="fas fa-trash"></i></button>
           </div>
-          
-          <button @click="kosongkanKeranjang" class="text-red-500 text-xs font-bold uppercase hover:text-red-400 mt-4 pl-2 tracking-widest">Hapus Semua</button>
+
+          <button @click="hapusSemua" class="text-xs text-red-500 font-bold uppercase hover:underline">Hapus Semua</button>
         </div>
 
         <div class="lg:col-span-1">
-          <div class="bg-[#151515] rounded-3xl border border-gray-800 p-6 sticky top-28">
-            <h3 class="font-bold text-white text-lg mb-6 uppercase tracking-widest border-b border-gray-800 pb-4">Ringkasan</h3>
-            <div class="space-y-3 mb-6">
-               <div class="flex justify-between text-gray-400 text-sm"><span>Total Item</span><span>{{ cart.length }} Item</span></div>
-               <div class="flex justify-between text-xl font-black text-white border-t border-gray-800 pt-4"><span>Total</span><span class="text-rose-500">Rp {{ totalSemua.toLocaleString() }}</span></div>
+          <div class="bg-[#151515] p-6 rounded-3xl border border-gray-800 sticky top-28">
+            <h3 class="font-black text-xl uppercase italic mb-6">Ringkasan</h3>
+            
+            <div class="space-y-3 text-sm mb-6">
+              <div class="flex justify-between text-gray-400">
+                <span>Total Item</span>
+                <span class="text-white font-bold">{{ cartItems.length }} Item</span>
+              </div>
+              <div class="flex justify-between text-gray-400">
+                <span>Total Harga</span>
+                <span class="text-rose-500 font-bold text-lg">Rp {{ grandTotal.toLocaleString() }}</span>
+              </div>
             </div>
-            <button @click="checkout" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white hover:shadow-[0_0_20px_rgba(225,29,72,0.5)] transition-all transform hover:-translate-y-1">Lanjut Pembayaran</button>
+
+            <router-link to="/pembayaran" class="block w-full bg-white text-black text-center py-4 rounded-xl font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(225,29,72,0.5)]">
+              Lanjut Pembayaran
+            </router-link>
           </div>
         </div>
 
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Navbar from "@/components/Navbar.vue"
+import { ref, computed, onMounted } from 'vue';
+import Swal from 'sweetalert2';
 
-const cart = ref([])
-const isLoggedIn = ref(false)
-const router = useRouter()
+const cartItems = ref([]);
+
+// --- 1. LOGIC PENGAMBILAN CART YANG BENAR ---
+const getCartKey = () => {
+    const token = localStorage.getItem("buyer_token");
+    const userDataStr = localStorage.getItem("user_data");
+
+    if (token && userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        if (userData.id) {
+            return `cart_${userData.id}`; // Ambil punya user (cart_15)
+        }
+    }
+    return 'cart_guest'; // Fallback
+};
+
+const loadCart = () => {
+    const key = getCartKey();
+    cartItems.value = JSON.parse(localStorage.getItem(key) || '[]');
+};
 
 onMounted(() => {
-  const token = localStorage.getItem("buyer_token");
-  isLoggedIn.value = !!token;
-
-  if (!token) {
-    // 👇 LOGIKA PENTING: JIKA GUEST, KERANJANG KOSONG
-    cart.value = []; 
-    // Optional: localStorage.removeItem('cart'); 
-  } else {
-    // JIKA MEMBER, AMBIL DATA
-    const storedCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.value = storedCart;
-  }
-})
+    loadCart();
+});
+// --------------------------------------------
 
 const getImgUrl = (path) => {
-  if (!path) return 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image';
+  if (!path) return 'https://placehold.co/150x150/1a1a1a/FFF?text=No+Image';
   if (path.startsWith('http')) return path;
   return `http://127.0.0.1:8000/${path}`;
-};
+}
 
 const hitungHari = (item) => {
   if (!item.tanggalMulai || !item.tanggalSelesai) return 0;
   const start = new Date(item.tanggalMulai);
   const end = new Date(item.tanggalSelesai);
-  return Math.max(0, (end - start) / (1000 * 60 * 60 * 24));
+  const diff = (end - start) / (1000 * 60 * 60 * 24);
+  return diff > 0 ? diff : 0;
 }
 
-const hitungSubtotal = (item) => item ? hitungHari(item) * item.harga_sewa * item.jumlah : 0;
-const totalSemua = computed(() => cart.value.reduce((total, item) => total + hitungSubtotal(item), 0));
+const grandTotal = computed(() => {
+  return cartItems.value.reduce((total, item) => {
+    const hari = hitungHari(item);
+    return total + (hari * item.harga_sewa * item.jumlah);
+  }, 0);
+});
+
+// --- UPDATE CART ---
+const updateLocalStorage = () => {
+    const key = getCartKey();
+    localStorage.setItem(key, JSON.stringify(cartItems.value));
+    window.dispatchEvent(new Event('cart-updated')); // Biar navbar ikut update
+};
 
 const hapusItem = (index) => {
-  cart.value.splice(index, 1);
-  localStorage.setItem('cart', JSON.stringify(cart.value));
-  window.dispatchEvent(new Event('cart-updated'));
-}
+    Swal.fire({
+        title: 'Hapus?',
+        text: "Yakin mau hapus gear ini?",
+        icon: 'warning',
+        showCancelButton: true,
+        background: '#151515', color: '#fff',
+        confirmButtonColor: '#e11d48',
+        confirmButtonText: 'Ya, Hapus!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            cartItems.value.splice(index, 1);
+            updateLocalStorage();
+            Swal.fire({ icon: 'success', title: 'Terhapus!', background: '#151515', color: '#fff', timer: 1000, showConfirmButton: false });
+        }
+    });
+};
 
-const kosongkanKeranjang = () => {
-  if (confirm('Yakin?')) {
-    cart.value = [];
-    localStorage.removeItem('cart');
-    window.dispatchEvent(new Event('cart-updated'));
-  }
-}
-
-const checkout = () => {
-  if (cart.value.length === 0) return;
-  localStorage.setItem("checkout_cart", JSON.stringify(cart.value));
-  localStorage.setItem("checkout_total", totalSemua.value);
-  router.push("/pembayaran");
-}
+const hapusSemua = () => {
+    cartItems.value = [];
+    updateLocalStorage();
+};
 </script>

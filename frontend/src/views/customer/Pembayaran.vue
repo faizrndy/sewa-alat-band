@@ -16,6 +16,11 @@
             <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">1</span>
             Review Gear
           </h2>
+          
+          <div v-if="itemsKeranjang.length === 0" class="text-center text-gray-500 py-4">
+             Wah, data keranjang tidak terbaca. Coba kembali ke menu Keranjang.
+          </div>
+
           <div class="space-y-4">
             <div v-for="item in itemsKeranjang" :key="item.id" class="flex gap-4 bg-black/40 p-4 rounded-2xl border border-gray-800/50">
               <div class="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-white rounded-xl overflow-hidden">
@@ -172,7 +177,7 @@ const deskripsiLokasi = ref("");
 const alamat = ref("");
 const fileIdentitas = ref(null);
 
-// State Peta & Lokasi
+// State Peta
 const lat = ref(null);
 const lon = ref(null);
 const jarak = ref(0);
@@ -181,45 +186,52 @@ let marker;
 const tokoLat = -7.568; 
 const tokoLon = 110.829;
 
-// --- [FUNGSI AUTO-FILL PROFILE - FINAL FIXED] ---
+// --- [LOGIC AMBIL KUNCI KERANJANG] ---
+const getCartKey = () => {
+    const token = localStorage.getItem("buyer_token");
+    const userDataStr = localStorage.getItem("user_data");
+
+    if (token && userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        if (userData.id) {
+            return `cart_${userData.id}`; // Ambil punya user (cart_15)
+        }
+    }
+    return 'cart_guest'; // Fallback
+};
+
+// 🔥 PERBAIKAN: Ambil Keranjang dari Key yang Benar 🔥
+const itemsKeranjang = ref(JSON.parse(localStorage.getItem(getCartKey()) || "[]"));
+
+// --- [FUNGSI AUTO-FILL PROFILE] ---
 const getProfile = async () => {
   console.log("Memulai Auto-Fill Profile...");
   try {
     const token = localStorage.getItem("buyer_token");
-    if (!token) {
-        console.warn("Token tidak ditemukan di localStorage");
-        return;
-    }
+    if (!token) return;
 
     const res = await axios.get('/api/buyer/profile', {
         headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log("Response Profile:", res.data); // Debugging
-
-    // PERBAIKAN PENTING: Ambil data dari pembungkus '.user' jika ada
-    let user = null;
+    // Handle jika response dibungkus data atau tidak
+    const user = res.data.data || res.data; 
     
-    if (res.data.user) {
-        user = res.data.user; // Priority 1: Sesuai Screenshot Console
-    } else if (res.data.data) {
-        user = res.data.data; // Priority 2
-    } else {
-        user = res.data;      // Priority 3
-    }
+    // Priority: data.user -> data.data -> data
+    let userData = user;
+    if (res.data.user) userData = res.data.user;
+    else if (res.data.data) userData = res.data.data;
 
-    if (user) {
-        // Logika Pengisian
-        nama.value = user.nama_lengkap || user.name || "";
-        telepon.value = user.nomor_telepon || "";
-        console.log("Berhasil Mengisi Form:", { nama: nama.value, telepon: telepon.value });
-    }
+    // ISI FORM OTOMATIS
+    nama.value = userData.nama_lengkap || userData.name || "";
+    telepon.value = userData.nomor_telepon || "";
+    
+    console.log("Data terisi:", { nama: nama.value, telepon: telepon.value });
 
   } catch (e) {
     console.error("Gagal ambil profile:", e);
   }
 };
-// ------------------------------------------
 
 const onIdentitas = (e) => { fileIdentitas.value = e.target.files[0]; };
 
@@ -262,7 +274,7 @@ async function pilihLokasi(e) {
 }
 
 onMounted(() => {
-  getProfile(); // <--- Pastikan ini dipanggil
+  getProfile(); 
 
   if(document.getElementById('map')) {
       map = L.map("map").setView([tokoLat, tokoLon], 13);
@@ -284,7 +296,6 @@ function updateTarif() {
   }
 }
 
-const itemsKeranjang = ref(JSON.parse(localStorage.getItem("cart") || "[]"));
 const totalSewa = computed(() => {
   return itemsKeranjang.value.reduce((total, item) => {
     const hari = hitungHari(item);
@@ -336,13 +347,19 @@ const kirimPembayaran = async () => {
     if (window.snap && snapToken) {
       window.snap.pay(snapToken, {
         onSuccess: () => { 
-            localStorage.removeItem("cart"); 
+            // 🔥 FIX: Hapus Keranjang Dari Key Yang Benar
+            const key = getCartKey();
+            localStorage.removeItem(key);
             window.dispatchEvent(new Event('cart-updated'));
             Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', background: '#151515', color: '#fff' }).then(() => {
                 window.location.href = `/riwayat?telepon=${telepon.value}`; 
             });
         },
         onPending: () => { 
+            // Opsional: Hapus juga kalau pending
+            const key = getCartKey();
+            localStorage.removeItem(key);
+            window.dispatchEvent(new Event('cart-updated'));
             Swal.fire({ icon: 'info', title: 'Menunggu Pembayaran', text: 'Selesaikan pembayaran lo ya.', background: '#151515', color: '#fff' }).then(() => {
                 window.location.href = `/riwayat?telepon=${telepon.value}`; 
             });
@@ -351,7 +368,8 @@ const kirimPembayaran = async () => {
         onClose: () => Swal.fire({ icon: 'question', title: 'Batal Bayar?', text: 'Lo bisa bayar nanti di menu Riwayat.', background: '#151515', color: '#fff' })
       });
     } else {
-        localStorage.removeItem("cart");
+        const key = getCartKey();
+        localStorage.removeItem(key);
         window.dispatchEvent(new Event('cart-updated'));
         window.location.href = `/riwayat?telepon=${telepon.value}`;
     }

@@ -1,9 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Import View Home
+// Import View
 import Home from '@/views/Home.vue'
-
-// Import Layout Admin
 import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const routes = [
@@ -13,14 +11,14 @@ const routes = [
   
   { path: '/', name: 'Home', component: Home },
 
-  // 📦 KATALOG
+  // KATALOG
   { 
     path: '/katalog', 
     name: 'Katalog', 
     component: () => import('@/views/customer/Katalog.vue') 
   },
 
-  // 🔍 DETAIL PRODUK
+  // DETAIL PRODUK
   {
     path: '/katalog/:id',
     name: 'DetailAlat',
@@ -28,36 +26,30 @@ const routes = [
     props: true
   },
 
-  // 🛒 KERANJANG (Butuh Login Buyer)
-  {
-    path: '/keranjang',
-    name: 'Keranjang',
+  // HALAMAN BUTUH LOGIN
+  { 
+    path: '/keranjang', 
+    name: 'Keranjang', 
     component: () => import('@/views/customer/Keranjang.vue'),
     meta: { requiresAuth: true }
   },
-
-  // 👤 PROFILE (Butuh Login Buyer)
-  {
-    path: '/profile',
-    name: 'Profile',
+  { 
+    path: '/profile', 
+    name: 'Profile', 
     component: () => import('@/views/customer/Profile.vue'),
     meta: { requiresAuth: true }
   },
-
-  // 💳 PEMBAYARAN (Butuh Login Buyer)
-  {
-    path: "/pembayaran",
-    name: "Pembayaran",
+  { 
+    path: "/pembayaran", 
+    name: "Pembayaran", 
     component: () => import("@/views/customer/Pembayaran.vue"),
     meta: { requiresAuth: true }
   },
-
-  // 📜 RIWAYAT
-  {
-    path: "/riwayat",
-    name: "Riwayat",
+  { 
+    path: "/riwayat", 
+    name: "Riwayat", 
     component: () => import("@/views/customer/Riwayat.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
 
   // INFO PAGES
@@ -74,53 +66,27 @@ const routes = [
   // 🔐 BAGIAN ADMIN (DENGAN LAYOUT)
   // ==========================================
 
-  // 1. Login Admin
   { 
     path: '/admin/login', 
     name: 'AdminLogin', 
     component: () => import('@/views/admin/LoginAdmin.vue') 
   },
 
-  // 2. Panel Admin (PROTECTED)
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAdmin: true }, // 👈 Semua anak di bawah ini otomatis terproteksi
+    meta: { requiresAdmin: true },
     redirect: '/admin/dashboard',
     children: [
-      { 
-        path: 'dashboard', 
-        name: 'AdminDashboard', 
-        component: () => import('@/views/admin/Dashboard.vue')
-      },
-      { 
-        path: 'alat', 
-        name: 'AdminAlatIndex', 
-        component: () => import('@/views/admin/alat/Index.vue') 
-      },
-      { 
-        path: 'alat/create', 
-        name: 'AdminAlatCreate', 
-        component: () => import('@/views/admin/alat/Create.vue') 
-      },
-      { 
-        path: 'alat/edit/:id', 
-        name: 'AdminAlatEdit', 
-        component: () => import('@/views/admin/alat/Edit.vue') 
-      },
-      { 
-        path: 'transaksi', 
-        name: 'AdminTransaksiIndex', 
-        component: () => import('@/views/admin/transaksi/Index.vue') 
-      },
+      { path: 'dashboard', name: 'AdminDashboard', component: () => import('@/views/admin/Dashboard.vue') },
+      { path: 'alat', name: 'AdminAlatIndex', component: () => import('@/views/admin/alat/Index.vue') },
+      { path: 'alat/create', name: 'AdminAlatCreate', component: () => import('@/views/admin/alat/Create.vue') },
+      { path: 'alat/edit/:id', name: 'AdminAlatEdit', component: () => import('@/views/admin/alat/Edit.vue') },
+      { path: 'transaksi', name: 'AdminTransaksiIndex', component: () => import('@/views/admin/transaksi/Index.vue') },
     ]
   },
   
-  // 404 Not Found (Redirect ke Home)
-  { 
-    path: '/:pathMatch(.*)*', 
-    redirect: '/' 
-  }
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({
@@ -129,42 +95,46 @@ const router = createRouter({
 })
 
 // ==========================================
-// 🛡️ NAVIGATION GUARD (SATPAM) - VERSI FINAL
+// 🛡️ NAVIGATION GUARD (SATPAM GALAK)
 // ==========================================
 router.beforeEach((to, from, next) => {
-  // Ambil Token dari LocalStorage
   const buyerToken = localStorage.getItem("buyer_token");
   const adminToken = localStorage.getItem("admin_token");
+  
+  // Ambil Data User & Cek Role
+  const userDataStr = localStorage.getItem("user_data");
+  const user = userDataStr ? JSON.parse(userDataStr) : null;
 
-  // 1. CEK AKSES ADMIN (Gunakan matched.some agar Parent Route terdeteksi)
+  // 1. CEK AKSES ADMIN
   if (to.matched.some(record => record.meta.requiresAdmin)) {
+    // Kalau gak punya token admin -> TENDANG
     if (!adminToken) {
-      // Kalau mau ke admin tapi gak punya token -> TENDANG ke Login Admin
       return next({ name: 'AdminLogin' });
+    }
+    
+    // 🔥 PERBAIKAN UTAMA: Cek Role User 🔥
+    // Kalau punya token, tapi role-nya BUKAN admin (misal 'buyer'), TENDANG KE HOME
+    if (user && user.role !== 'admin') {
+       return next({ name: 'Home' });
     }
   }
 
-  // 2. CEK AKSES BUYER
+  // 2. CEK AKSES BUYER (Harus Login)
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!buyerToken) {
-      // Kalau mau belanja tapi gak punya token -> TENDANG ke Login Buyer
       return next({ name: 'Login' });
     }
   }
 
-  // 3. LOGIC REDIRECT JIKA SUDAH LOGIN (Biar gak balik ke halaman login)
-  
-  // Jika Admin sudah login, tendang balik ke Dashboard jika buka halaman login admin
+  // 3. LOGIC REDIRECT LOGIN (Biar gak muter-muter)
   if (to.name === 'AdminLogin' && adminToken) {
     return next({ name: 'AdminDashboard' });
   }
   
-  // Jika Buyer sudah login, tendang balik ke Home jika buka login/register
   if ((to.name === 'Login' || to.name === 'Register') && buyerToken) {
     return next({ name: 'Home' });
   }
 
-  // Kalau aman semua, silakan lewat
   next();
 });
 
