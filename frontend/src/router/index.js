@@ -12,6 +12,13 @@ const routes = [
   { path: '/', name: 'Home', component: Home },
 
   {
+    path: '/verify-otp',
+    name: 'verify-otp',
+    component: () => import('@/views/VerifyOtp.vue')
+  },
+
+
+  {
     path: '/katalog',
     name: 'Katalog',
     component: () => import('@/views/customer/Katalog.vue')

@@ -3,40 +3,52 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
-    // Menampilkan halaman login
-    public function showLogin()
-    {
-        return view('auth.login');
-    }
-
-    // Proses login
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
+        // Validasi input
+        $request->validate([
+            'email'    => 'required|email',
             'password' => 'required',
+            'captcha'  => 'required'   // WAJIB!
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+        // Validasi CAPTCHA ke Google API
+        $response = Http::asForm()->post("https://www.google.com/recaptcha/api/siteverify", [
+            'secret'   => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->captcha,
+            'remoteip' => $request->ip(),
+        ]);
+
+        if (!$response->json('success')) {
+            return response()->json([
+                'message' => 'Captcha tidak valid!'
+            ], 422);
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
-    }
+        // Cari user berdasarkan email
+        $user = User::where('email', $request->email)->first();
 
-    // Logout
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect('/login');
+        // Jika user tidak ditemukan atau password salah
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Email atau password salah.',
+            ], 401);
+        }
+
+        // Buat token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Berhasil
+        return response()->json([
+            'message' => 'Login berhasil!',
+            'token'   => $token,
+            'user'    => $user,
+        ], 200);
     }
 }

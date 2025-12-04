@@ -11,34 +11,31 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Mass assignable fields
-     */
     protected $fillable = [
         'name',
-    'nama_lengkap',
-    'email',
-    'nomor_telepon',
-    'password',
-    'role',
+        'nama_lengkap',
+        'email',
+        'nomor_telepon',
+        'password',
+        'role',
+        'otp',              // <-- WAJIB DITAMBAHKAN
+        'otp_expires_at',   // <-- WAJIB DITAMBAHKAN
+        'is_verified',      // <-- WAJIB DITAMBAHKAN
     ];
 
-    /**
-     * Fields hidden from JSON
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',              // optional
     ];
 
-    /**
-     * Cast settings
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
+            'is_verified' => 'boolean',
         ];
     }
 }

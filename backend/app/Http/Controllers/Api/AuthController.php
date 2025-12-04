@@ -4,15 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash; // Tambahkan ini
-use Illuminate\Support\Facades\Validator; // Tambahkan ini
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use App\Models\User;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
     // ===========================
-    // REGISTER (UMUM)
+    // REGISTER (KIRIM OTP)
     // ===========================
     public function register(Request $request)
     {
@@ -27,93 +29,116 @@ class AuthController extends Controller
             return response()->json(['message' => $validator->errors()->first()], 422);
         }
 
+        // Generate OTP
+        $otp = rand(100000, 999999);
+
         $user = User::create([
-            'name'           => $request->nama_lengkap, // Simpan ke kolom name juga
+            'name'           => $request->nama_lengkap,
             'nama_lengkap'   => $request->nama_lengkap,
             'email'          => $request->email,
             'nomor_telepon'  => $request->nomor_telepon,
             'password'       => Hash::make($request->password),
-            'role'           => 'buyer', // Default daftar sendiri = buyer
+            'role'           => 'buyer',
+            'otp'            => $otp,
+            'otp_expires_at' => Carbon::now()->addMinutes(5),
+            'is_verified'    => false,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Kirim OTP ke email
+        Mail::raw("Kode OTP kamu adalah: $otp (berlaku 5 menit)", function ($msg) use ($user) {
+            $msg->to($user->email)->subject("Kode OTP Verifikasi Akun");
+        });
 
         return response()->json([
-            'message' => 'Registrasi berhasil!',
-            'user'    => $user,
-            'token'   => $token,
+            'message' => 'Registrasi berhasil! OTP telah dikirim ke email.',
+            'email'   => $user->email,
         ], 201);
     }
 
+
     // ===========================
-    // LOGIN (BISA ADMIN & BUYER)
+    // VERIFIKASI OTP
     // ===========================
-    public function login(Request $request)
+    public function verifyOtp(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
+            'email' => 'required|email',
+            'otp'   => 'required'
         ]);
 
         $user = User::where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Email atau password salah'
-            ], 401);
+        if (! $user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
-        // ✅ PENGECEKAN ROLE DIHAPUS
-        // Sekarang Admin bisa login lewat sini. 
-        // Frontend yang akan menentukan redirect ke /admin atau /home
+        // Convert ke integer agar perbandingan sama
+        $incomingOtp = (int) $request->otp;
 
-        // Buat Token
+        if ((int)$user->otp !== $incomingOtp) {
+            return response()->json(['message' => 'OTP salah'], 422);
+        }
+
+        if (Carbon::now()->greaterThan($user->otp_expires_at)) {
+            return response()->json(['message' => 'OTP kadaluarsa'], 422);
+        }
+
+        $user->update([
+            'is_verified' => true,
+            'otp' => null,
+            'otp_expires_at' => null
+        ]);
+
+        return response()->json(['message' => 'Verifikasi OTP berhasil!']);
+    }
+
+
+
+    // ===========================
+    // LOGIN (PAKAI CAPTCHA)
+    // ===========================
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email'          => 'required|email',
+            'password'       => 'required',
+            'captcha_token'  => 'required'
+        ]);
+
+        // Verifikasi captcha
+        $captcha = Http::asForm()->post("https://www.google.com/recaptcha/api/siteverify", [
+            'secret'   => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->captcha_token
+        ]);
+
+        if (! $captcha->json()['success']) {
+            return response()->json(['message' => 'Captcha tidak valid!'], 422);
+        }
+
+        // Validasi user
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Email atau password salah'], 401);
+        }
+
+        // Cek apakah user sudah verifikasi OTP
+        if (! $user->is_verified) {
+            return response()->json([
+                'message' => 'Akun belum diverifikasi. Silakan cek email untuk OTP.'
+            ], 403);
+        }
+
+        // Buat Token Sanctum
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil!',
             'token'   => $token,
-            'user'    => $user // Data user (termasuk role) dikirim ke frontend
-        ]);
-    }
-
-    // ===========================
-    // GET PROFILE
-    // ===========================
-    public function profile(Request $request)
-    {
-        return response()->json([
-            'user' => $request->user(),
-        ]);
-    }
-
-    // ===========================
-    // UPDATE PROFILE
-    // ===========================
-    public function updateProfile(Request $request)
-    {
-        $user = $request->user();
-
-        $validator = Validator::make($request->all(), [
-            'nama_lengkap'   => 'required|string|max:255',
-            'nomor_telepon'  => 'required|string|max:20',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
-
-        $user->update([
-            'nama_lengkap'   => $request->nama_lengkap,
-            'name'           => $request->nama_lengkap,
-            'nomor_telepon'  => $request->nomor_telepon,
-        ]);
-
-        return response()->json([
-            'message' => 'Profil berhasil diperbarui',
             'user'    => $user
         ]);
     }
+
 
     // ===========================
     // LOGOUT
@@ -121,9 +146,6 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logout berhasil'
-        ]);
+        return response()->json(['message' => 'Logout berhasil']);
     }
 }
