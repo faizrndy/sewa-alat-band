@@ -6,19 +6,17 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const routes = [
   // ==========================================
-  // 🏠 BAGIAN PUBLIC & CUSTOMER
+  // 🏠 PUBLIC & CUSTOMER
   // ==========================================
-  
+
   { path: '/', name: 'Home', component: Home },
 
-  // KATALOG
-  { 
-    path: '/katalog', 
-    name: 'Katalog', 
-    component: () => import('@/views/customer/Katalog.vue') 
+  {
+    path: '/katalog',
+    name: 'Katalog',
+    component: () => import('@/views/customer/Katalog.vue')
   },
 
-  // DETAIL PRODUK
   {
     path: '/katalog/:id',
     name: 'DetailAlat',
@@ -26,33 +24,34 @@ const routes = [
     props: true
   },
 
-  // HALAMAN BUTUH LOGIN
-  { 
-    path: '/keranjang', 
-    name: 'Keranjang', 
+  {
+    path: '/keranjang',
+    name: 'Keranjang',
     component: () => import('@/views/customer/Keranjang.vue'),
     meta: { requiresAuth: true }
   },
-  { 
-    path: '/profile', 
-    name: 'Profile', 
+
+  {
+    path: '/profile',
+    name: 'Profile',
     component: () => import('@/views/customer/Profile.vue'),
     meta: { requiresAuth: true }
   },
-  { 
-    path: "/pembayaran", 
-    name: "Pembayaran", 
+
+  {
+    path: "/pembayaran",
+    name: "Pembayaran",
     component: () => import("@/views/customer/Pembayaran.vue"),
     meta: { requiresAuth: true }
   },
-  { 
-    path: "/riwayat", 
-    name: "Riwayat", 
+
+  {
+    path: "/riwayat",
+    name: "Riwayat",
     component: () => import("@/views/customer/Riwayat.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }
   },
 
-  // INFO PAGES
   { path: '/about', name: 'About', component: () => import('@/views/About.vue') },
   { path: '/faq', name: 'FAQ', component: () => import('@/views/FAQ.vue') },
   { path: '/terms', name: 'Terms', component: () => import('@/views/Terms.vue') },
@@ -61,15 +60,14 @@ const routes = [
   { path: '/login', name: 'Login', component: () => import('@/views/Login.vue') },
   { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
 
-
   // ==========================================
-  // 🔐 BAGIAN ADMIN (DENGAN LAYOUT)
+  // 🔐 ADMIN AREA
   // ==========================================
 
-  { 
-    path: '/admin/login', 
-    name: 'AdminLogin', 
-    component: () => import('@/views/admin/LoginAdmin.vue') 
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/admin/LoginAdmin.vue')
   },
 
   {
@@ -85,7 +83,8 @@ const routes = [
       { path: 'transaksi', name: 'AdminTransaksiIndex', component: () => import('@/views/admin/transaksi/Index.vue') },
     ]
   },
-  
+
+  // CATCH ALL
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -95,42 +94,32 @@ const router = createRouter({
 })
 
 // ==========================================
-// 🛡️ NAVIGATION GUARD (SATPAM GALAK)
+// 🛡️ NAVIGATION GUARD FIXED
 // ==========================================
 router.beforeEach((to, from, next) => {
   const buyerToken = localStorage.getItem("buyer_token");
   const adminToken = localStorage.getItem("admin_token");
-  
-  // Ambil Data User & Cek Role
-  const userDataStr = localStorage.getItem("user_data");
-  const user = userDataStr ? JSON.parse(userDataStr) : null;
 
-  // 1. CEK AKSES ADMIN
-  if (to.matched.some(record => record.meta.requiresAdmin)) {
-    // Kalau gak punya token admin -> TENDANG
+  // 1️⃣ ADMIN PROTECTED ROUTES
+  if (to.matched.some(r => r.meta.requiresAdmin)) {
     if (!adminToken) {
       return next({ name: 'AdminLogin' });
     }
-    
-    // 🔥 PERBAIKAN UTAMA: Cek Role User 🔥
-    // Kalau punya token, tapi role-nya BUKAN admin (misal 'buyer'), TENDANG KE HOME
-    if (user && user.role !== 'admin') {
-       return next({ name: 'Home' });
-    }
   }
 
-  // 2. CEK AKSES BUYER (Harus Login)
-  if (to.matched.some(record => record.meta.requiresAuth)) {
+  // 2️⃣ CUSTOMER PROTECTED ROUTES
+  if (to.matched.some(r => r.meta.requiresAuth)) {
     if (!buyerToken) {
       return next({ name: 'Login' });
     }
   }
 
-  // 3. LOGIC REDIRECT LOGIN (Biar gak muter-muter)
+  // 3️⃣ ADMIN LOGIN -> kalau sudah login, langsung masuk dashboard
   if (to.name === 'AdminLogin' && adminToken) {
     return next({ name: 'AdminDashboard' });
   }
-  
+
+  // 4️⃣ BUYER LOGIN -> kalau sudah login, jauhkan dari login/register
   if ((to.name === 'Login' || to.name === 'Register') && buyerToken) {
     return next({ name: 'Home' });
   }
