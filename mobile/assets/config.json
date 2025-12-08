@@ -1,0 +1,6 @@
+{
+  "api_url": "http://127.0.0.1:8000",
+  "app_name": "Sewa Alat Band Mobile",
+  "app_version": "1.0.0",
+  "debug": true
+}

@@ -17,9 +17,10 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,127.0.0.1:5173,localhost:5173,::1',
+        // Hanya untuk web apps (Vue.js), mobile apps menggunakan token stateless
+        // Port 58267 untuk Flutter development server sudah didukung
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
     ))),
 
     /*

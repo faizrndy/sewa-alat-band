@@ -17,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             //
         ]);
 
-        // API middleware
+        // API middleware - HAPUS EnsureFrontendRequestsAreStateful untuk mobile apps
         $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // ❌ Disabled for mobile
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
 
