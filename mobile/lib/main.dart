@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import 'providers/auth_provider.dart';
 import 'providers/transaksi_provider.dart';
+import 'providers/inventory_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/profile_screen.dart';
@@ -13,6 +14,9 @@ import 'screens/edit_profile_screen.dart';
 import 'screens/create_transaksi_screen.dart';
 import 'screens/riwayat_transaksi_screen.dart';
 import 'screens/catalog_screen.dart';
+import 'screens/inventory_screen.dart';
+import 'screens/add_inventory_screen.dart';
+import 'screens/edit_inventory_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +60,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => TransaksiProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => InventoryProvider(),
         ),
       ],
       child: MaterialApp(
@@ -134,6 +141,12 @@ class MyApp extends StatelessWidget {
             return CreateTransaksiScreen(alat: alat);
           },
           '/riwayat-transaksi': (context) => const RiwayatTransaksiScreen(),
+          '/inventory': (context) => const InventoryScreen(),
+          '/add-inventory': (context) => const AddInventoryScreen(),
+          '/edit-inventory': (context) {
+            final alat = ModalRoute.of(context)!.settings.arguments as dynamic;
+            return EditInventoryScreen(alat: alat);
+          },
         },
         debugShowCheckedModeBanner: config['debug'] ?? false,
       ),
@@ -208,7 +221,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         if (authProvider.isAuthenticated) {
-          return const CatalogScreen();
+          // Check if user is admin
+          if (authProvider.user?.role == 'admin') {
+            return const InventoryScreen();
+          } else {
+            return const CatalogScreen();
+          }
         }
 
         return const LoginScreen();

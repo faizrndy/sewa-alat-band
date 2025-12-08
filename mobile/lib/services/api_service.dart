@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -100,6 +101,53 @@ class ApiService {
         Uri.parse('$baseUrlValue$endpoint'),
         headers: headers,
       );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // POST with file upload (multipart/form-data)
+  static Future<Map<String, dynamic>> postWithFile(
+    String endpoint,
+    Map<String, dynamic> data,
+    String fileFieldName,
+    File file, {
+    String? token
+  }) async {
+    try {
+      final baseUrlValue = await baseUrl;
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrlValue$endpoint'),
+      );
+
+      // Add token if provided
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add text fields
+      data.forEach((key, value) {
+        if (value != null) {
+          request.fields[key] = value.toString();
+        }
+      });
+
+      // Add file
+      if (file.existsSync()) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            fileFieldName,
+            file.path,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response);
     } catch (e) {
@@ -241,5 +289,95 @@ class AuthApi {
   // Logout user
   static Future<Map<String, dynamic>> logout(String token) async {
     return ApiService.post('/api/buyer/logout', {}, token: token);
+  }
+}
+
+// Inventory API endpoints
+class InventoryApi {
+  // Get all alat band
+  static Future<Map<String, dynamic>> getAlatBand({String? search, String? category}) async {
+    String endpoint = '/api/alat-band';
+
+    // Add query parameters if provided
+    final queryParams = <String, String>{};
+    if (search != null && search.isNotEmpty) {
+      queryParams['search'] = search;
+    }
+    if (category != null && category.isNotEmpty) {
+      queryParams['kategori'] = category;
+    }
+
+    if (queryParams.isNotEmpty) {
+      final queryString = queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
+      endpoint += '?$queryString';
+    }
+
+    return ApiService.get(endpoint);
+  }
+
+  // Create new alat band
+  static Future<Map<String, dynamic>> createAlatBand(
+    String token, {
+    required String namaAlat,
+    required String kategori,
+    required int stok,
+    required double hargaSewa,
+    String? deskripsi,
+    required String status,
+    File? gambar,
+  }) async {
+    final data = {
+      'nama_alat': namaAlat,
+      'kategori': kategori,
+      'stok': stok,
+      'harga_sewa': hargaSewa,
+      'status': status,
+    };
+
+    if (deskripsi != null && deskripsi.isNotEmpty) {
+      data['deskripsi'] = deskripsi;
+    }
+
+    if (gambar != null) {
+      return ApiService.postWithFile('/api/alat-band', data, 'gambar', gambar, token: token);
+    } else {
+      return ApiService.post('/api/alat-band', data, token: token);
+    }
+  }
+
+  // Update alat band
+  static Future<Map<String, dynamic>> updateAlatBand(
+    String token,
+    int id, {
+    required String namaAlat,
+    required String kategori,
+    required int stok,
+    required double hargaSewa,
+    String? deskripsi,
+    required String status,
+    File? gambar,
+  }) async {
+    final data = {
+      'nama_alat': namaAlat,
+      'kategori': kategori,
+      'stok': stok,
+      'harga_sewa': hargaSewa,
+      'status': status,
+    };
+
+    if (deskripsi != null && deskripsi.isNotEmpty) {
+      data['deskripsi'] = deskripsi;
+    }
+
+    if (gambar != null) {
+      return ApiService.postWithFile('/api/alat-band/$id', data, 'gambar', gambar, token: token);
+    } else {
+      return ApiService.post('/api/alat-band/$id', data, token: token);
+    }
+  }
+
+  // Delete alat band
+  static Future<Map<String, dynamic>> deleteAlatBand(String token, int id) async {
+    return ApiService.delete('/api/alat-band/$id', token: token);
   }
 }
