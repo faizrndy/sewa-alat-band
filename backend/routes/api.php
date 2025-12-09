@@ -46,7 +46,8 @@ Route::post('/register/send-otp', [AuthController::class, 'sendOtp']);
 // REGISTER + OTP
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
 
 
 /*

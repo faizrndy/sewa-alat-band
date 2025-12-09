@@ -54,4 +54,9 @@ return [
         'snap_url' => env('MIDTRANS_SNAP_URL', 'https://app.sandbox.midtrans.com/snap/snap.js'),
     ],
 
+        // ✅ TAMBAHKAN INI
+        'recaptcha' => [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+        ],
+
 ];

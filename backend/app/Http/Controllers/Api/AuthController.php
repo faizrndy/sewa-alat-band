@@ -98,46 +98,46 @@ class AuthController extends Controller
     // LOGIN (PAKAI CAPTCHA)
     // ===========================
     public function login(Request $request)
-    {
-        $request->validate([
-            'email'          => 'required|email',
-            'password'       => 'required',
-            'captcha_token'  => 'required'
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+        'g-recaptcha-response' => 'required',
+    ]);
 
-        // Verifikasi captcha
-        $captcha = Http::asForm()->post("https://www.google.com/recaptcha/api/siteverify", [
-            'secret'   => env('RECAPTCHA_SECRET_KEY'),
-            'response' => $request->captcha_token
-        ]);
+    $response = Http::asForm()->post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        [
+            'secret' => config('services.recaptcha.secret'),
+            'response' => $request->input('g-recaptcha-response'),
+            'remoteip' => $request->ip(),
+        ]
+    );
 
-        if (! $captcha->json()['success']) {
-            return response()->json(['message' => 'Captcha tidak valid!'], 422);
-        }
-
-        // Validasi user
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email atau password salah'], 401);
-        }
-
-        // Cek apakah user sudah verifikasi OTP
-        if (! $user->is_verified) {
-            return response()->json([
-                'message' => 'Akun belum diverifikasi. Silakan cek email untuk OTP.'
-            ], 403);
-        }
-
-        // Buat Token Sanctum
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login berhasil!',
-            'token'   => $token,
-            'user'    => $user
-        ]);
+    if (!($response['success'] ?? false)) {
+        return response()->json(['message' => 'Captcha tidak valid!'], 422);
     }
+
+    $user = User::where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Email atau password salah'], 401);
+    }
+
+    if (! $user->is_verified) {
+        return response()->json([
+            'message' => 'Akun belum diverifikasi. Silakan cek email untuk OTP.'
+        ], 403);
+    }
+
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Login berhasil!',
+        'token' => $token,
+        'user' => $user,
+    ]);
+}
 
 
     // ===========================

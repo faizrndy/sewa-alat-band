@@ -607,6 +607,7 @@ class ComposerStaticInitd93c808f2e91f43c37cca91c8a9de0a1
         'App\\Http\\Controllers\\FaqController' => __DIR__ . '/../..' . '/app/Http/Controllers/FaqController.php',
         'App\\Http\\Controllers\\LandingController' => __DIR__ . '/../..' . '/app/Http/Controllers/LandingController.php',
         'App\\Http\\Controllers\\ReviewController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReviewController.php',
+        'App\\Http\\Resources\\AlatBandResource' => __DIR__ . '/../..' . '/app/Http/Resources/AlatBandResource.php',
         'App\\Models\\AlatBand' => __DIR__ . '/../..' . '/app/Models/AlatBand.php',
         'App\\Models\\Faq' => __DIR__ . '/../..' . '/app/Models/Faq.php',
         'App\\Models\\Review' => __DIR__ . '/../..' . '/app/Models/Review.php',

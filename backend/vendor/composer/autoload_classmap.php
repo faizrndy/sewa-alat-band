@@ -19,6 +19,7 @@ return array(
     'App\\Http\\Controllers\\FaqController' => $baseDir . '/app/Http/Controllers/FaqController.php',
     'App\\Http\\Controllers\\LandingController' => $baseDir . '/app/Http/Controllers/LandingController.php',
     'App\\Http\\Controllers\\ReviewController' => $baseDir . '/app/Http/Controllers/ReviewController.php',
+    'App\\Http\\Resources\\AlatBandResource' => $baseDir . '/app/Http/Resources/AlatBandResource.php',
     'App\\Models\\AlatBand' => $baseDir . '/app/Models/AlatBand.php',
     'App\\Models\\Faq' => $baseDir . '/app/Models/Faq.php',
     'App\\Models\\Review' => $baseDir . '/app/Models/Review.php',

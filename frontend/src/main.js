@@ -3,13 +3,15 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 
+// ✅ AUTO LOGOUT
+import { startAutoLogout } from './utils/autoLogout'
+
 // --- 1. IMPORT LIBRARY ---
 import axios from "axios";
 import Cookies from "js-cookie";
 import "leaflet/dist/leaflet.css";
 
 // --- 2. IMPORT UNTUK FIX GAMBAR LEAFLET (Vite Issue) ---
-// Tanpa ini, gambar pin/marker di peta sering error (broken image)
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -24,14 +26,8 @@ L.Icon.Default.mergeOptions({
 });
 
 // --- 3. KONFIGURASI AXIOS GLOBAL ---
-// Set URL Backend sekali saja di sini. 
-// Di file lain (Profile.vue, dll) cukup pakai axios.get('/api/...')
 axios.defaults.baseURL = "http://127.0.0.1:8000";
-
-// Wajib 'true' agar cookie/token bisa bolak-balik antara frontend & backend
 axios.defaults.withCredentials = true;
-
-// Header standar agar Laravel tahu ini request Ajax/API
 axios.defaults.headers.common['Accept'] = 'application/json';
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -39,7 +35,6 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.xsrfCookieName = "XSRF-TOKEN";
 axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
 
-// Interceptor: Otomatis ambil token dari cookie dan tempel ke header request
 axios.interceptors.request.use((config) => {
   const token = Cookies.get("XSRF-TOKEN");
   if (token) {
@@ -53,3 +48,6 @@ const app = createApp(App);
 
 app.use(router);
 app.mount('#app');
+
+// ✅ AKTIFKAN AUTO LOGOUT (INI YANG BARU)
+startAutoLogout(router);

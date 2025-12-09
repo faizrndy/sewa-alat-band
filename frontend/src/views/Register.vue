@@ -9,27 +9,58 @@
 
         <form @submit.prevent="sendOtp" class="space-y-4">
 
+          <!-- NAMA -->
           <div>
             <label class="label-dark">Nama Lengkap</label>
             <input v-model="form.name" class="input-dark" required />
           </div>
 
+          <!-- EMAIL -->
           <div>
             <label class="label-dark">Email</label>
             <input v-model="form.email" type="email" class="input-dark" required />
           </div>
 
+          <!-- PHONE -->
           <div>
             <label class="label-dark">Nomor Telepon</label>
             <input v-model="form.phone" type="tel" class="input-dark" required />
           </div>
 
+          <!-- PASSWORD -->
           <div>
             <label class="label-dark">Password</label>
-            <input v-model="form.password" type="password" class="input-dark" required />
+            <input
+              v-model="form.password"
+              type="password"
+              class="input-dark"
+              required
+            />
+
+            <!-- BAROMETER -->
+            <div class="w-full h-2 bg-gray-700 rounded-full mt-2 overflow-hidden">
+              <div
+                class="h-full transition-all duration-300"
+                :class="strengthColor"
+                :style="{ width: passwordStrength + '%' }"
+              ></div>
+            </div>
+
+            <!-- TEXT + ICON -->
+            <p
+              class="text-xs mt-1 font-semibold flex items-center gap-1"
+              :class="strengthColor.replace('bg', 'text')"
+            >
+              {{ strengthIcon }}
+              Password {{ strengthText }}
+            </p>
           </div>
 
-          <button class="w-full bg-rose-600 py-3 rounded-xl font-bold text-white">
+          <!-- SUBMIT -->
+          <button
+            class="w-full bg-rose-600 py-3 rounded-xl font-bold text-white disabled:opacity-60"
+            :disabled="loading"
+          >
             {{ loading ? 'Mengirim OTP...' : 'DAFTAR' }}
           </button>
 
@@ -41,7 +72,7 @@
   </template>
 
   <script setup>
-  import { ref } from "vue"
+  import { ref, computed } from "vue"
   import Swal from "sweetalert2"
   import axios from "axios"
   import { useRouter } from "vue-router"
@@ -56,7 +87,53 @@
     password: ""
   })
 
+  /* =============================
+     PASSWORD STRENGTH LOGIC
+     ============================= */
+  const passwordStrength = computed(() => {
+    const pwd = form.value.password
+
+    if (pwd.length === 0) return 0
+    if (pwd.length < 6) return 25
+    if (pwd.length < 8) return 50
+    if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) return 75
+    return 100
+  })
+
+  const strengthText = computed(() => {
+    if (passwordStrength.value < 50) return "Lemah"
+    if (passwordStrength.value < 100) return "Sedang"
+    return "Kuat"
+  })
+
+  const strengthColor = computed(() => {
+    if (passwordStrength.value < 50) return "bg-red-500"
+    if (passwordStrength.value < 100) return "bg-yellow-500"
+    return "bg-green-500"
+  })
+
+  const strengthIcon = computed(() => {
+    if (passwordStrength.value < 50) return "❌"
+    if (passwordStrength.value < 100) return "⚠️"
+    return "✅"
+  })
+
+  /* =============================
+     REGISTER + OTP
+     ============================= */
   const sendOtp = async () => {
+    // ❌ CEGAT password lemah
+    if (passwordStrength.value < 100) {
+      Swal.fire({
+        icon: "warning",
+        title: "Password belum aman",
+        text: "Gunakan password kuat (minimal 8 karakter, huruf besar & angka).",
+        background: "#151515",
+        color: "#fff"
+      })
+      return
+    }
+
     loading.value = true
 
     try {
@@ -95,6 +172,10 @@
   </script>
 
   <style scoped>
-  .label-dark { @apply text-xs font-bold text-gray-500 uppercase mb-1 block; }
-  .input-dark { @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl; }
+  .label-dark {
+    @apply text-xs font-bold text-gray-500 uppercase mb-1 block;
+  }
+  .input-dark {
+    @apply w-full bg-[#050505] border border-gray-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-rose-500;
+  }
   </style>
