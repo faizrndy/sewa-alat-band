@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 
 class ApiService {
   static String? _baseUrl;
+  static const Duration _timeout = Duration(seconds: 30);
+  static const int _maxRetries = 3;
 
   static Future<String> get baseUrl async {
     if (_baseUrl == null) {
@@ -26,45 +29,80 @@ class ApiService {
     };
   }
 
+  // Helper method for retry logic
+  static Future<T> _retry<T>(
+    Future<T> Function() operation,
+    int maxRetries,
+  ) async {
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        return await operation();
+      } catch (e) {
+        attempts++;
+        if (attempts >= maxRetries) {
+          throw e;
+        }
+        // Wait before retry (exponential backoff)
+        await Future.delayed(Duration(seconds: attempts * 2));
+      }
+    }
+    throw Exception('Max retries exceeded');
+  }
+
   // GET request
   static Future<Map<String, dynamic>> get(String endpoint, {String? token}) async {
-    try {
-      final baseUrlValue = await baseUrl;
-      final headers = {..._headers};
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
+    return _retry(() async {
+      try {
+        final baseUrlValue = await baseUrl;
+        final headers = {..._headers};
+        if (token != null) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+
+        final response = await http.get(
+          Uri.parse('$baseUrlValue$endpoint'),
+          headers: headers,
+        ).timeout(_timeout);
+
+        return _handleResponse(response);
+      } on TimeoutException {
+        throw Exception('Connection timeout. Please check your internet connection.');
+      } catch (e) {
+        if (e is SocketException) {
+          throw Exception('No internet connection. Please check your network.');
+        }
+        throw Exception('Network error: $e');
       }
-
-      final response = await http.get(
-        Uri.parse('$baseUrlValue$endpoint'),
-        headers: headers,
-      );
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    }, _maxRetries);
   }
 
   // POST request
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data, {String? token}) async {
-    try {
-      final baseUrlValue = await baseUrl;
-      final headers = {..._headers};
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
+    return _retry(() async {
+      try {
+        final baseUrlValue = await baseUrl;
+        final headers = {..._headers};
+        if (token != null) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+
+        final response = await http.post(
+          Uri.parse('$baseUrlValue$endpoint'),
+          headers: headers,
+          body: json.encode(data),
+        ).timeout(_timeout);
+
+        return _handleResponse(response);
+      } on TimeoutException {
+        throw Exception('Connection timeout. Please check your internet connection.');
+      } catch (e) {
+        if (e is SocketException) {
+          throw Exception('No internet connection. Please check your network.');
+        }
+        throw Exception('Network error: $e');
       }
-
-      final response = await http.post(
-        Uri.parse('$baseUrlValue$endpoint'),
-        headers: headers,
-        body: json.encode(data),
-      );
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    }, _maxRetries);
   }
 
   // PUT request
@@ -246,12 +284,14 @@ class AuthApi {
     required String email,
     required String password,
     required String phone,
+    String role = 'buyer',
   }) async {
     return ApiService.post('/api/register', {
-      'name': name,
+      'nama_lengkap': name,
       'email': email,
       'password': password,
-      'phone': phone,
+      'nomor_telepon': phone,
+      'role': role,
     });
   }
 

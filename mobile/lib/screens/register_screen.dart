@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _selectedRole = 'buyer'; // Default role
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +133,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                         return null;
                       },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Role Selection Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: const InputDecoration(
+                          labelText: 'Role',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'buyer',
+                            child: Text('User Biasa'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'admin',
+                            child: Text('Admin'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Role harus dipilih';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
 
                     const SizedBox(height: 16),
@@ -280,6 +322,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       phone: _phoneController.text.trim(),
+      role: _selectedRole,
     );
 
     if (success && mounted) {

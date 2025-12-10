@@ -21,6 +21,7 @@ class AuthController extends Controller
             'email'          => 'required|email|unique:users,email',
             'nomor_telepon'  => 'required|string|max:20',
             'password'       => 'required|min:6',
+            'role'           => 'required|in:buyer,admin',
         ]);
 
         if ($validator->fails()) {
@@ -33,7 +34,7 @@ class AuthController extends Controller
             'email'          => $request->email,
             'nomor_telepon'  => $request->nomor_telepon,
             'password'       => Hash::make($request->password),
-            'role'           => 'buyer', // Default daftar sendiri = buyer
+            'role'           => $request->role ?? 'buyer', // Gunakan role dari request atau default buyer
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;

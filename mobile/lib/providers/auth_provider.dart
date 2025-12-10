@@ -65,6 +65,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String phone,
+    String role = 'buyer',
   }) async {
     _setLoading(true);
     _error = null;
@@ -75,6 +76,7 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
         phone: phone,
+        role: role,
       );
 
       if (response['user'] != null && response['token'] != null) {
