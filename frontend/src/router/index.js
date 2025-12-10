@@ -77,10 +77,21 @@ const routes = [
     redirect: '/admin/dashboard',
     children: [
       { path: 'dashboard', name: 'AdminDashboard', component: () => import('@/views/admin/Dashboard.vue') },
+      
+      // Manajemen Alat
       { path: 'alat', name: 'AdminAlatIndex', component: () => import('@/views/admin/alat/Index.vue') },
       { path: 'alat/create', name: 'AdminAlatCreate', component: () => import('@/views/admin/alat/Create.vue') },
       { path: 'alat/edit/:id', name: 'AdminAlatEdit', component: () => import('@/views/admin/alat/Edit.vue') },
+      
+      // Manajemen Transaksi
       { path: 'transaksi', name: 'AdminTransaksiIndex', component: () => import('@/views/admin/transaksi/Index.vue') },
+      
+      // 🔥 ROUTE BARU: INVOICE / KWITANSI
+      { 
+        path: 'transaksi/:kode/invoice', 
+        name: 'admin.transaksi.invoice', 
+        component: () => import('@/views/admin/transaksi/Invoice.vue') 
+      },
     ]
   },
 

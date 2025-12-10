@@ -5,7 +5,7 @@
 
     <div class="w-full max-w-md bg-[#111] border border-gray-800 rounded-3xl p-8 shadow-2xl relative z-10">
       <div class="text-center mb-8">
-        <img src="/images/logo1.png" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" />
+        <img src="/images/logo1.png" class="w-16 h-16 mx-auto mb-4 drop-shadow-lg" onerror="this.style.display='none'" />
         <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Login <span class="text-rose-600">Member</span></h2>
         <p class="text-gray-500 text-sm mt-2">Masuk buat atur bookingan lo.</p>
       </div>
@@ -20,7 +20,7 @@
           <input v-model="form.password" type="password" placeholder="••••••••" class="input-dark" required />
         </div>
 
-        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition disabled:opacity-50">
+        <button type="submit" :disabled="loading" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-rose-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed">
           {{ loading ? 'Loading...' : 'Gass Masuk' }}
         </button>
       </form>
@@ -46,48 +46,53 @@ const form = ref({ email: '', password: '' })
 const loading = ref(false)
 
 const login = async () => {
+  if (!form.value.email || !form.value.password) {
+      Swal.fire({ icon: 'warning', title: 'Isi dulu bro', text: 'Email & Password wajib diisi.' });
+      return;
+  }
+
   loading.value = true
   try {
-    const res = await axios.post('/api/login', form.value)
+    // Gunakan Full URL biar aman
+    const res = await axios.post('http://127.0.0.1:8000/api/login', form.value)
     
-    // 1. Simpan Token
-    localStorage.setItem('buyer_token', res.data.token)
+    // --- 1. SIMPAN TOKEN (KUNCI UTAMA) ---
+    // Handle kemungkinan nama field token berbeda
+    const token = res.data.token || res.data.access_token;
+    localStorage.setItem('buyer_token', token);
     
-    // 2. Simpan Data User (PENTING BUAT KUNCI KERANJANG)
-    if (res.data.user) {
-        localStorage.setItem('user_data', JSON.stringify(res.data.user));
-        
-        // --- LOGIC PINDAHKAN KERANJANG TAMU KE USER ---
-        const guestCart = JSON.parse(localStorage.getItem('cart_guest') || '[]');
-        if (guestCart.length > 0) {
-            const userKey = `cart_${res.data.user.id}`;
-            // Gabungkan atau timpa? Di sini kita timpa saja biar simpel
-            // Atau logic gabung: [...userCart, ...guestCart]
-            localStorage.setItem(userKey, JSON.stringify(guestCart));
-            localStorage.removeItem('cart_guest'); // Kosongkan tamu
-        }
+    // --- 2. SIMPAN USER DATA (UNTUK AUTO FILL PEMBAYARAN) ---
+    // Handle struktur data response backend
+    const user = res.data.user || res.data.data;
+    if (user) {
+        localStorage.setItem('user_data', JSON.stringify(user));
     }
 
+    // Trigger event biar komponen lain tau ada perubahan auth
     window.dispatchEvent(new Event('cart-updated'));
 
     Swal.fire({
       icon: 'success',
       title: 'Welcome Back!',
-      text: 'Siap guncang panggung lagi?',
+      text: 'Login berhasil, selamat datang!',
       background: '#151515', color: '#fff', 
       iconColor: '#e11d48', confirmButtonColor: '#e11d48',
       timer: 1500, showConfirmButton: false
     }).then(() => {
-       if(res.data.user.role === 'admin') {
+       // Redirect sesuai Role
+       if(user && user.role === 'admin') {
            window.location.href = '/admin/dashboard';
        } else {
-           router.push('/');
+           // Redirect ke Katalog biar user bisa langsung sewa
+           router.push('/katalog');
        }
     })
 
   } catch (err) { 
+    console.error(err);
     Swal.fire({
-      icon: 'error', title: 'Gagal Masuk',
+      icon: 'error', 
+      title: 'Gagal Masuk',
       text: err.response?.data?.message || 'Email atau password salah bro.',
       background: '#151515', color: '#fff', confirmButtonColor: '#e11d48'
     });

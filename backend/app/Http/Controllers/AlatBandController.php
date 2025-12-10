@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\AlatBand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class AlatBandController extends Controller
 {
     // ==========================================
-    // 🟢 HALAMAN WEB ADMIN (BLADE VIEW)
+    // 🟢 HALAMAN WEB ADMIN (BLADE VIEW) - TETAP SAMA
     // ==========================================
 
     public function dashboard()
@@ -33,14 +34,8 @@ class AlatBandController extends Controller
         return view('alat-band.create');
     }
 
-    /**
-     * Tambah Alat Baru (Admin)
-     * * Endpoint ini digunakan untuk menambahkan data alat musik baru ke database.
-     * Mendukung upload file gambar.
-     */
     public function store(Request $request)
     {
-        // Validasi
         $request->validate([
             'nama_alat'  => 'required|string|max:255',
             'kategori'   => 'required|string',
@@ -53,7 +48,6 @@ class AlatBandController extends Controller
 
         $data = $request->all();
 
-        // Proses Upload Gambar
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -63,7 +57,6 @@ class AlatBandController extends Controller
 
         $alat = AlatBand::create($data);
 
-        // Jika request dari API (Vue Admin), kembalikan JSON
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json(['message' => 'Alat berhasil ditambahkan', 'data' => $alat], 201);
         }
@@ -83,11 +76,6 @@ class AlatBandController extends Controller
         return view('alat-band.edit', compact('alat'));
     }
 
-    /**
-     * Update Data Alat
-     * * Endpoint ini digunakan untuk mengubah data alat musik.
-     * Gunakan metode POST dengan _method=PUT atau form-data untuk update gambar.
-     */
     public function update(Request $request, $id)
     {
         $alat = AlatBand::findOrFail($id);
@@ -98,24 +86,20 @@ class AlatBandController extends Controller
             'stok'       => 'required|integer|min:0',
             'harga_sewa' => 'required|numeric|min:0',
             'deskripsi'  => 'nullable|string',
-            'gambar'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'gambar'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'     => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
-        $data = $request->except(['gambar']); 
+        $data = $request->except(['gambar']);
 
-        // Proses Upload Gambar Baru (Jika Ada)
         if ($request->hasFile('gambar')) {
-            // Hapus gambar lama fisik
             if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
                 unlink(public_path($alat->gambar));
             }
 
             $file = $request->file('gambar');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
             $file->move(public_path('images/alat-band'), $filename);
-            
             $data['gambar'] = 'images/alat-band/' . $filename;
         }
 
@@ -128,55 +112,102 @@ class AlatBandController extends Controller
         return redirect()->route('alat-band.index')->with('success', 'Alat band berhasil diupdate!');
     }
 
-    /**
-     * Hapus Alat
-     * * Menghapus data alat musik beserta file gambarnya dari server.
-     */
     public function destroy($id)
     {
         $alat = AlatBand::findOrFail($id);
-
-        // Hapus file gambar jika ada
         if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
             unlink(public_path($alat->gambar));
         }
-
         $alat->delete();
 
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json(['message' => 'Alat berhasil dihapus']);
         }
-
         return redirect()->route('alat-band.index')->with('success', 'Alat band berhasil dihapus!');
     }
 
 
     // ==========================================
-    // 🟢 API ENDPOINTS (SCRAMBLE FRIENDLY)
+    // 🟢 API ENDPOINTS (MODIFIKASI UNTUK REVISI)
     // ==========================================
 
     /**
-     * List Semua Alat Band (Katalog)
-     * * Mengambil daftar semua alat musik.
-     * Bisa difilter berdasarkan kategori atau pencarian nama.
+     * Cari Alat Available (REVISI DOSEN: Filter Tanggal Dulu)
+     * Endpoint: GET /api/alat-check
      */
+    public function searchAvailable(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'tgl_mulai' => 'required|date|after_or_equal:today',
+        'tgl_selesai' => 'required|date|after_or_equal:tgl_mulai',
+    ]);
+
+    $start = $request->tgl_mulai;
+    $end = $request->tgl_selesai;
+
+    // 2. Query Stok (FIXED STATUS)
+    $alatBand = AlatBand::withSum(['transaksiItems as sedang_disewa' => function($query) use ($start, $end) {
+        $query->whereHas('transaksi', function($q) use ($start, $end) {
+            // 🔥 TAMBAHKAN SEMUA STATUS YANG DIANGGAP "SEWA AKTIF"
+            $q->whereIn('status', [
+                'pending', 
+                'paid', 
+                'success', 
+                'settlement', // Status dari Midtrans
+                'capture',    // Status dari Midtrans (Kartu Kredit)
+                'sewa_berjalan' // Custom status jika ada
+            ])
+            ->where(function($sub) use ($start, $end) {
+                // Cek irisan tanggal (Overlap)
+                $sub->whereBetween('tgl_mulai', [$start, $end])
+                    ->orWhereBetween('tgl_selesai', [$start, $end])
+                    ->orWhere(function($deep) use ($start, $end) {
+                        $deep->where('tgl_mulai', '<=', $start)
+                             ->where('tgl_selesai', '>=', $end);
+                    });
+            });
+        });
+    }], 'jumlah') // Sum kolom 'jumlah'
+    ->orderBy('created_at', 'desc')
+    ->get();
+
+    // 3. Hitung Sisa Stok Real
+    $availableAlats = $alatBand->map(function ($item) {
+        $stokTerpakai = (int) $item->sedang_disewa; // Pastikan integer
+        $sisaStok = $item->stok - $stokTerpakai;
+
+        return [
+            'id' => $item->id,
+            'nama_alat' => $item->nama_alat,
+            'kategori' => $item->kategori,
+            'harga_sewa' => (int) $item->harga_sewa,
+            'gambar' => asset($item->gambar),
+            'stok_total' => $item->stok,
+            'stok_terpakai' => $stokTerpakai, // Debugging info
+            'stok_tersedia' => $sisaStok > 0 ? $sisaStok : 0,
+            'is_available' => $sisaStok > 0
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $availableAlats
+    ]);
+}
+
+    // Endpoint lama (API Index biasa) tetap disimpan buat jaga-jaga
     public function apiIndex(Request $request)
     {
         $query = AlatBand::query();
-
-        // Fitur Filter Kategori
         if ($request->kategori && $request->kategori != 'Semua Kategori') {
             $query->where('kategori', $request->kategori);
         }
-
-        // Fitur Search
         if ($request->search) {
             $query->where('nama_alat', 'like', '%' . $request->search . '%');
         }
 
         $alatBand = $query->orderBy('created_at', 'desc')->get();
-
-        // Modifikasi data agar URL gambar lengkap
         $alatBand->transform(function ($item) {
             $item->gambar = asset($item->gambar);
             $item->harga_sewa = (int) $item->harga_sewa;
@@ -186,17 +217,10 @@ class AlatBandController extends Controller
         return response()->json($alatBand);
     }
 
-    /**
-     * Detail Satu Alat
-     * * Mendapatkan detail lengkap satu alat berdasarkan ID.
-     */
     public function apiShow($id)
     {
         $alat = AlatBand::find($id);
-
-        if (!$alat) {
-            return response()->json(['message' => 'Alat tidak ditemukan'], 404);
-        }
+        if (!$alat) return response()->json(['message' => 'Alat tidak ditemukan'], 404);
 
         return response()->json([
             'id' => $alat->id,
