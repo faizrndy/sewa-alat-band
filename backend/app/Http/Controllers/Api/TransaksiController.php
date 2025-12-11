@@ -147,4 +147,35 @@ class TransaksiController extends Controller
             'data' => $transaksi,
         ]);
     }
+
+    // Tambahkan method ini
+    public function history(Request $request)
+    {
+        // 1. Ambil User yang sedang login dari Token
+        $user = $request->user();
+
+        // 2. Cari Transaksi berdasarkan No. Telepon User
+        // Asumsi: Di tabel users kolomnya 'nomor_telepon' atau 'telepon'
+        // Sesuaikan dengan nama kolom di database user kamu
+        $userPhone = $user->nomor_telepon ?? $user->telepon; 
+
+        if (!$userPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Profil Anda belum ada nomor telepon.',
+                'data' => []
+            ]);
+        }
+
+        // 3. Query ke database
+        $transaksi = Transaksi::with('items.alat') // <--- Load relasi bersarang (Items -> Alat)
+        ->where('telepon', $userPhone)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $transaksi
+        ]);
+    }
 }

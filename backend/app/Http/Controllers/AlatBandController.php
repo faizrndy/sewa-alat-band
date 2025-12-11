@@ -135,66 +135,70 @@ class AlatBandController extends Controller
      * Cari Alat Available (REVISI DOSEN: Filter Tanggal Dulu)
      * Endpoint: GET /api/alat-check
      */
-    public function searchAvailable(Request $request)
-{
-    // 1. Validasi Input
-    $request->validate([
-        'tgl_mulai' => 'required|date|after_or_equal:today',
-        'tgl_selesai' => 'required|date|after_or_equal:tgl_mulai',
-    ]);
+public function searchAvailable(Request $request)
+    {
+        // 1. Validasi Input Tanggal
+        $request->validate([
+            'tgl_mulai' => 'required|date|after_or_equal:today',
+            'tgl_selesai' => 'required|date|after_or_equal:tgl_mulai',
+        ]);
 
-    $start = $request->tgl_mulai;
-    $end = $request->tgl_selesai;
+        $start = $request->tgl_mulai;
+        $end = $request->tgl_selesai;
 
-    // 2. Query Stok (FIXED STATUS)
-    $alatBand = AlatBand::withSum(['transaksiItems as sedang_disewa' => function($query) use ($start, $end) {
-        $query->whereHas('transaksi', function($q) use ($start, $end) {
-            // 🔥 TAMBAHKAN SEMUA STATUS YANG DIANGGAP "SEWA AKTIF"
-            $q->whereIn('status', [
-                'pending', 
-                'paid', 
-                'success', 
-                'settlement', // Status dari Midtrans
-                'capture',    // Status dari Midtrans (Kartu Kredit)
-                'sewa_berjalan' // Custom status jika ada
-            ])
-            ->where(function($sub) use ($start, $end) {
-                // Cek irisan tanggal (Overlap)
-                $sub->whereBetween('tgl_mulai', [$start, $end])
-                    ->orWhereBetween('tgl_selesai', [$start, $end])
-                    ->orWhere(function($deep) use ($start, $end) {
-                        $deep->where('tgl_mulai', '<=', $start)
-                             ->where('tgl_selesai', '>=', $end);
+        // 2. Mulai Query Alat
+        $query = AlatBand::query();
+
+        // 🔥 TAMBAHAN LOGIC FILTER (INI YANG KURANG KEMARIN) 🔥
+        if ($request->has('search') && $request->search != '') {
+            $query->where('nama_alat', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->has('kategori') && $request->kategori != '' && $request->kategori != 'Semua Kategori') {
+            $query->where('kategori', $request->kategori);
+        }
+
+        // 3. Logic Hitung Stok (Seperti Sebelumnya)
+        $alatBand = $query->withSum(['transaksiItems as sedang_disewa' => function($q) use ($start, $end) {
+            $q->whereHas('transaksi', function($trx) use ($start, $end) {
+                // Filter status sewa aktif
+                $trx->whereIn('status', ['pending', 'paid', 'success', 'settlement', 'capture', 'sewa_berjalan'])
+                    // Filter irisan tanggal
+                    ->where(function($sub) use ($start, $end) {
+                        $sub->whereBetween('tgl_mulai', [$start, $end])
+                            ->orWhereBetween('tgl_selesai', [$start, $end])
+                            ->orWhere(function($deep) use ($start, $end) {
+                                $deep->where('tgl_mulai', '<=', $start)
+                                     ->where('tgl_selesai', '>=', $end);
+                            });
                     });
             });
+        }], 'jumlah')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // 4. Mapping Data & Sisa Stok
+        $availableAlats = $alatBand->map(function ($item) {
+            $stokTerpakai = (int) $item->sedang_disewa;
+            $sisaStok = $item->stok - $stokTerpakai;
+
+            return [
+                'id' => $item->id,
+                'nama_alat' => $item->nama_alat,
+                'kategori' => $item->kategori,
+                'harga_sewa' => (int) $item->harga_sewa,
+                'gambar' => asset($item->gambar),
+                'stok_total' => $item->stok,
+                'stok_tersedia' => $sisaStok > 0 ? $sisaStok : 0,
+                'is_available' => $sisaStok > 0
+            ];
         });
-    }], 'jumlah') // Sum kolom 'jumlah'
-    ->orderBy('created_at', 'desc')
-    ->get();
 
-    // 3. Hitung Sisa Stok Real
-    $availableAlats = $alatBand->map(function ($item) {
-        $stokTerpakai = (int) $item->sedang_disewa; // Pastikan integer
-        $sisaStok = $item->stok - $stokTerpakai;
-
-        return [
-            'id' => $item->id,
-            'nama_alat' => $item->nama_alat,
-            'kategori' => $item->kategori,
-            'harga_sewa' => (int) $item->harga_sewa,
-            'gambar' => asset($item->gambar),
-            'stok_total' => $item->stok,
-            'stok_terpakai' => $stokTerpakai, // Debugging info
-            'stok_tersedia' => $sisaStok > 0 ? $sisaStok : 0,
-            'is_available' => $sisaStok > 0
-        ];
-    });
-
-    return response()->json([
-        'success' => true,
-        'data' => $availableAlats
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'data' => $availableAlats
+        ]);
+    }
 
     // Endpoint lama (API Index biasa) tetap disimpan buat jaga-jaga
     public function apiIndex(Request $request)

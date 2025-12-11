@@ -25,4 +25,9 @@ class TransaksiItem extends Model
     {
         return $this->belongsTo(Transaksi::class, 'transaksi_id');
     }
+
+    public function alat()
+    {
+        return $this->belongsTo(AlatBand::class, 'alat_id');
+    }
 }

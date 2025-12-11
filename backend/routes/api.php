@@ -20,14 +20,14 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 |--------------------------------------------------------------------------
 */
 
-// 🟢 [REVISI] Route Cek Ketersediaan (Fitur Filter Tanggal Dulu)
-// Gunakan GET agar sesuai standar pencarian.
-// Mengarah ke AlatBandController sesuai kode baru.
+// 🟢 Route Cek Ketersediaan (Fitur Filter Tanggal & Stok)
 Route::get('/alat-check', [AlatBandController::class, 'searchAvailable']);
 
-// 1. ALAT BAND (Katalog Biasa)
+// 1. ALAT BAND (Katalog Public)
 Route::get('/alat-band', [AlatBandController::class, 'apiIndex']);
 Route::get('/alat-band/{id}', [AlatBandController::class, 'apiShow']);
+Route::get('/alat-band-public', [AlatBandController::class, 'apiIndex']);
+Route::get('/alat-band-public/{id}', [AlatBandController::class, 'apiShow']);
 
 // 2. INFO UMUM
 Route::get('/reviews', function () {
@@ -63,9 +63,13 @@ Route::get('/test-wa', function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     // === MODULE TRANSAKSI (Customer) ===
-    // Ini sudah benar mengarah ke TransaksiController@store yang baru (Bulk Order)
-    Route::post('/transaksi', [TransaksiController::class, 'store']);
+    Route::post('/transaksi', [TransaksiController::class, 'store']); // Checkout
     
+    // 🔥 ROUTE BARU: RIWAYAT OTOMATIS (MY ORDERS)
+    // Ini pasangan dari perubahan Riwayat.vue yang baru saja kita buat
+    Route::get('/buyer/history', [TransaksiController::class, 'history']);
+
+    // Route Lama (Opsional, boleh dihapus kalau tidak dipakai lagi)
     Route::get('/riwayat/{telepon}', [TransaksiController::class, 'riwayat']);
 
     // === MODULE USER PROFILE ===
@@ -80,6 +84,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 2. Kelola Transaksi
     Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
+    // Route untuk Admin melihat Detail Transaksi (Invoice)
+    Route::get('/admin/transaksi/{kode}', [AdminTransaksiController::class, 'show']); 
     Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
     
     // 3. Kelola Alat Band (CRUD)
