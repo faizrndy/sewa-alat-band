@@ -101,40 +101,49 @@
       </div>
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div v-for="item in alatBand" :key="item.id" 
-          class="group bg-[#151515] rounded-3xl overflow-hidden border border-gray-800 relative top-0 flex flex-col transition-all duration-300 hover:border-rose-600/50 hover:shadow-[0_0_30px_rgba(225,29,72,0.15)] hover:-top-2">
+  <div v-for="item in alatBand" :key="item.id" 
+    class="group bg-[#151515] rounded-3xl overflow-hidden border border-gray-800 relative top-0 flex flex-col transition-all duration-300"
+    :class="{ 'hover:border-rose-600/50 hover:shadow-[0_0_30px_rgba(225,29,72,0.15)] hover:-top-2': item.stok_tersedia > 0, 'opacity-50 grayscale cursor-not-allowed': item.stok_tersedia <= 0 }">
 
-          <div class="relative h-64 bg-[#0a0a0a] p-6 flex items-center justify-center overflow-hidden border-b border-gray-800">
-            <img :src="getImgUrl(item.gambar)" 
-              @error="$event.target.src = 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image'"
-              class="w-full h-full object-contain group-hover:scale-110 group-hover:rotate-3 transition duration-500 drop-shadow-2xl" />
+    <div class="relative h-64 bg-[#0a0a0a] p-6 flex items-center justify-center overflow-hidden border-b border-gray-800">
+      <img :src="getImgUrl(item.gambar)" 
+        @error="$event.target.src = 'https://placehold.co/400x400/1a1a1a/FFF?text=No+Image'"
+        class="w-full h-full object-contain drop-shadow-2xl transition duration-500"
+        :class="{ 'group-hover:scale-110 group-hover:rotate-3': item.stok_tersedia > 0 }" />
 
-            <div class="absolute top-3 left-3">
-              <span class="bg-green-500 text-black text-[10px] font-black px-3 py-1 uppercase tracking-widest rounded-full shadow-lg">
-                Stok: {{ item.stok_tersedia !== undefined ? item.stok_tersedia : item.stok }}
-              </span>
-            </div>
-          </div>
-
-          <div class="p-6 flex flex-col flex-grow">
-            <p class="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-1">{{ item.kategori }}</p>
-            <h3 class="text-white text-lg font-black uppercase italic leading-tight mb-4 line-clamp-2">
-              {{ item.nama_alat }}
-            </h3>
-
-            <div class="mt-auto flex items-center justify-between pt-4 border-t border-gray-800">
-              <div>
-                <p class="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Sewa Harian</p>
-                <p class="text-white font-bold text-lg">Rp {{ Number(item.harga_sewa).toLocaleString() }}</p>
-              </div>
-
-              <button @click="addToCart(item)" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider transition shadow-lg shadow-rose-900/20 active:scale-95">
-                + ADD
-              </button>
-            </div>
-          </div>
-        </div>
+      <div class="absolute top-3 left-3">
+        <span v-if="item.stok_tersedia > 0" class="bg-green-500 text-black text-[10px] font-black px-3 py-1 uppercase tracking-widest rounded-full shadow-lg">
+          Stok: {{ item.stok_tersedia }}
+        </span>
+        <span v-else class="bg-red-600 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest rounded-full shadow-lg">
+          HABIS
+        </span>
       </div>
+    </div>
+
+    <div class="p-6 flex flex-col flex-grow">
+      <p class="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-1">{{ item.kategori }}</p>
+      <h3 class="text-white text-lg font-black uppercase italic leading-tight mb-4 line-clamp-2">
+        {{ item.nama_alat }}
+      </h3>
+
+      <div class="mt-auto flex items-center justify-between pt-4 border-t border-gray-800">
+        <div>
+          <p class="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Sewa Harian</p>
+          <p class="text-white font-bold text-lg">Rp {{ Number(item.harga_sewa).toLocaleString() }}</p>
+        </div>
+
+        <button 
+          @click="item.stok_tersedia > 0 ? addToCart(item) : null" 
+          :disabled="item.stok_tersedia <= 0"
+          class="text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider transition shadow-lg"
+          :class="item.stok_tersedia > 0 ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20 active:scale-95' : 'bg-gray-700 text-gray-400 cursor-not-allowed'">
+          {{ item.stok_tersedia > 0 ? '+ ADD' : 'HABIS' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
     </div>
   </div>

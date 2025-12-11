@@ -175,7 +175,7 @@ import Navbar from "@/components/Navbar.vue";
 
 const router = useRouter();
 
-// STATE FORM
+// STATE FORMULIR
 const nama = ref("");
 const telepon = ref("");
 const deskripsiLokasi = ref("");
@@ -196,18 +196,18 @@ let marker;
 const tokoLat = -7.568; 
 const tokoLon = 110.829; 
 
-// CART LOGIC
+// DATA KERANJANG
 const itemsKeranjang = ref(JSON.parse(localStorage.getItem("keranjang") || "[]"));
 
 // ============================================
-// 1. AUTO FILL PROFILE
+// 1. ISI PROFIL OTOMATIS (AUTO FILL)
 // ============================================
 const getProfile = async () => {
-  // Ambil Token (Coba kedua key)
+  // Ambil Token (Coba kedua kemungkinan nama key)
   const token = localStorage.getItem("token") || localStorage.getItem("buyer_token");
   
   if (!token) {
-      console.log("Guest Mode - No Token");
+      console.log("Guest Mode - Tidak ada Token");
       return; 
   }
 
@@ -216,15 +216,16 @@ const getProfile = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     
+    // Ambil data user dari respons
     const u = res.data.data || res.data.user || res.data;
     if (u) {
         nama.value = u.nama_lengkap || u.name || u.nama || nama.value;
         telepon.value = u.nomor_telepon || u.telepon || u.phone || telepon.value;
     }
   } catch (e) {
-    // JIKA ERROR 401 (Unauthorized), Hapus Token Rusak
+    // JIKA ERROR 401 (Unauthorized), Hapus Token Rusak biar gak error terus
     if (e.response && e.response.status === 401) {
-        console.warn("Token expired saat load profile. Bersihkan storage.");
+        console.warn("Token expired. Membersihkan storage.");
         localStorage.removeItem("token");
         localStorage.removeItem("buyer_token");
     }
@@ -232,9 +233,9 @@ const getProfile = async () => {
 };
 
 const onIdentitas = e => fileIdentitas.value = e.target.files[0];
-const getImgUrl = (path) => path?.startsWith("http") ? path : `http://localhost:8000/${path}`;
+const getImgUrl = (path) => path?.startsWith("http") ? path : `http://127.0.0.1:8000/${path}`;
 
-// UPDATE ONGKIR
+// HITUNG ONGKIR OTOMATIS
 const metodePengiriman = ref("ambil");
 const tarifAntar = ref(0);
 
@@ -250,7 +251,7 @@ function updateTarif() {
   tarifAntar.value = hitung < minOngkir ? minOngkir : hitung;
 }
 
-// LOGIC LAINNYA
+// LOGIC TANGGAL
 const hitungHariGlobal = () => {
   tglMulai.value = localStorage.getItem('sewa_tgl_mulai');
   tglSelesai.value = localStorage.getItem('sewa_tgl_selesai');
@@ -269,11 +270,13 @@ onMounted(() => {
   getProfile();
   hitungHariGlobal();
 
+  // Redirect kalau tanggal belum dipilih
   if(!tglMulai.value || !tglSelesai.value) {
      Swal.fire({ icon: 'warning', title: 'Tanggal Kosong', text: 'Pilih tanggal dulu di Katalog', background: '#151515', color: '#fff' })
        .then(() => router.push('/katalog'));
   }
 
+  // Init Peta
   setTimeout(() => {
       if (document.getElementById("map")) {
         map = L.map("map").setView([tokoLat, tokoLon], 13);
@@ -285,7 +288,7 @@ onMounted(() => {
   }, 500);
 });
 
-// Helpers Peta
+// Helper Hitung Jarak
 function hitungJarak(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -300,7 +303,7 @@ async function pilihLokasi(e) {
   const jarakKlik = hitungJarak(tokoLat, tokoLon, klikLat, klikLon);
 
   if (jarakKlik > 25) {
-    Swal.fire({ icon: "warning", title: "Kejauhan Bos!", text: "Max 25km ya.", background: "#151515", color: "#fff" });
+    Swal.fire({ icon: "warning", title: "Kejauhan Bos!", text: "Maksimal 25km ya.", background: "#151515", color: "#fff" });
     return;
   }
   lat.value = klikLat; lon.value = klikLon; jarak.value = jarakKlik;
@@ -317,12 +320,11 @@ const totalSewa = computed(() => itemsKeranjang.value.reduce((total, item) => to
 const totalBayar = computed(() => totalSewa.value + tarifAntar.value);
 const loading = ref(false);
 
-// 🔥🔥🔥 SOLUSI FINAL AUTH 401 & ALAMAT
+// 🔥🔥🔥 SOLUSI FINAL PEMBAYARAN + HAPUS KERANJANG
 const kirimPembayaran = async () => {
-  // 1. Ambil Token dengan Benar (Cek Prioritas)
-  // Kalau ada token, kita pakai. Kalau tidak ada, STOP.
   const token = localStorage.getItem("token") || localStorage.getItem("buyer_token");
 
+  // Validasi Login
   if (!token) {
     return Swal.fire({ 
         icon: "error", 
@@ -334,12 +336,12 @@ const kirimPembayaran = async () => {
     }).then(() => router.push('/login'));
   }
 
-  // 2. Validasi Data
+  // Validasi Data Diri
   if (!nama.value || !telepon.value || !fileIdentitas.value) {
     return Swal.fire({ icon: "warning", title: "Data Kurang", text: "Lengkapi Nama, WA, dan Upload KTP.", background: "#151515", color: "#fff" });
   }
 
-  // Jika Antar, wajib pilih lokasi
+  // Validasi Lokasi (Jika Antar)
   if (metodePengiriman.value === "antar" && !lat.value) {
     return Swal.fire({ icon: "warning", title: "Pilih Lokasi", text: "Klik peta untuk lokasi pengantaran.", background: "#151515", color: "#fff" });
   }
@@ -350,8 +352,7 @@ const kirimPembayaran = async () => {
     form.append("nama", nama.value);
     form.append("telepon", telepon.value);
     
-    // LOGIC ALAMAT: Jika Ambil Sendiri -> Kirim Strip (-)
-    // Jika Antar -> Kirim Alamat dari Peta
+    // Logic Alamat: Jika Ambil Sendiri -> Kirim Strip (-)
     const alamatFinal = metodePengiriman.value === 'ambil' ? '-' : (alamat.value || '-');
     form.append("alamat", alamatFinal);
     
@@ -371,7 +372,6 @@ const kirimPembayaran = async () => {
     }));
     form.append("items", JSON.stringify(itemsToSend));
 
-    // Kirim Header Authorization
     const headers = { 
         "Content-Type": "multipart/form-data",
         "Authorization": `Bearer ${token}` 
@@ -379,37 +379,49 @@ const kirimPembayaran = async () => {
 
     const res = await axios.post("http://127.0.0.1:8000/api/transaksi", form, { headers });
     
+    // Logic Midtrans
     if (window.snap && res.data.snap_token) {
        window.snap.pay(res.data.snap_token, {
+         // ✅ HAPUS KERANJANG DI SINI
          onSuccess: () => {
-             localStorage.removeItem("keranjang"); localStorage.removeItem("sewa_tgl_mulai"); localStorage.removeItem("sewa_tgl_selesai");
-             window.location.href = `/riwayat?telepon=${telepon.value}`;
+             bersihkanKeranjang();
+             Swal.fire({icon: 'success', title: 'Berhasil!', text: 'Terima kasih sudah menyewa.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
          },
-         onPending: () => { window.location.href = `/riwayat?telepon=${telepon.value}`; }
+         onPending: () => { 
+             bersihkanKeranjang(); // Hapus karena data sudah masuk DB (status pending)
+             Swal.fire({icon: 'info', title: 'Menunggu Pembayaran', text: 'Cek halaman riwayat untuk bayar.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
+         },
+         onClose: () => {
+             bersihkanKeranjang(); // Hapus keranjang agar tidak double order
+             Swal.fire({icon: 'warning', title: 'Belum Bayar?', text: 'Transaksi sudah dibuat. Cek menu Riwayat.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
+         },
+         onError: () => Swal.fire({icon: 'error', title: 'Gagal', background: '#151515', color: '#fff'})
        });
     }
   } catch (err) {
-    console.error("Error Detail:", err); // Cek console kalau masih error
-
-    // Tangkap Error 401 (Token Salah/Expired)
     if (err.response && (err.response.status === 401 || err.response.status === 419)) {
-        Swal.fire({ 
-            icon: "error", 
-            title: "Sesi Habis", 
-            text: "Token kadaluwarsa. Login ulang yuk!", 
-            background: "#151515", 
-            color: "#fff",
-            confirmButtonColor: "#e11d48"
-        }).then(() => {
-            // BERSIHKAN TOKEN SAMPAH AGAR TIDAK LOOPING ERROR
-            localStorage.removeItem("token");
-            localStorage.removeItem("buyer_token");
-            router.push('/login');
-        });
+        Swal.fire({ icon: "error", title: "Sesi Habis", text: "Login ulang yuk!", background: "#151515", color: "#fff" })
+            .then(() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("buyer_token");
+                router.push('/login');
+            });
     } else {
         Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || "Gagal memproses", background: "#151515", color: "#fff" });
     }
   } finally { loading.value = false; }
+};
+
+// 🔥 FUNGSI BERSIHKAN KERANJANG
+const bersihkanKeranjang = () => {
+    localStorage.removeItem("keranjang"); 
+    localStorage.removeItem("sewa_tgl_mulai"); 
+    localStorage.removeItem("sewa_tgl_selesai");
+    // Trigger update Navbar
+    window.dispatchEvent(new Event('cart-updated')); 
 };
 </script>
 
