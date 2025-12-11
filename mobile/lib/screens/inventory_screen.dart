@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/inventory_provider.dart';
 import '../widgets/inventory_card.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
-import '../widgets/admin_drawer.dart';
 import 'add_inventory_screen.dart';
 import 'edit_inventory_screen.dart';
 
@@ -43,17 +41,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final inventoryProvider = context.watch<InventoryProvider>();
 
     return Scaffold(
-      drawer: const AdminDrawer(),
       appBar: AppBar(
         title: const Text('Inventory Management'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -62,6 +53,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => inventoryProvider.fetchAlatList(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _showLogoutConfirmation(context),
           ),
         ],
       ),
@@ -74,17 +69,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: Column(
               children: [
                 // Search Bar
-                CustomTextField(
+                TextFormField(
                   controller: _searchController,
-                  labelText: 'Cari Alat Musik',
-                  hintText: 'Cari nama alat atau kategori...',
-                  prefixIcon: Icons.search,
+                  decoration: const InputDecoration(
+                    labelText: 'Cari Alat Musik',
+                    hintText: 'Cari nama alat atau kategori...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
 
                 // Category Filter
                 DropdownButtonFormField<String?>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: InputDecoration(
                     hintText: 'Filter berdasarkan kategori',
                     prefixIcon: const Icon(Icons.filter_list),
@@ -147,9 +147,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
             style: const TextStyle(color: Colors.red),
           ),
           const SizedBox(height: 16),
-          CustomButton(
-            text: 'Coba Lagi',
-            onPressed: () => provider.fetchAlatList(),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => provider.fetchAlatList(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Coba Lagi',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -195,6 +211,35 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  void _showLogoutConfirmation(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    final navigator = Navigator.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Apakah Anda yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await authProvider.logout();
+      navigator.pushReplacementNamed('/login');
+    }
+  }
+
   void _navigateToAddScreen(BuildContext context) {
     Navigator.push(
       context,
@@ -225,13 +270,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final success = await provider.deleteAlatBand(alat.id);
               if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   const SnackBar(content: Text('Alat musik berhasil dihapus')),
                 );
               } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('Error: ${provider.error}')),
                 );
               }

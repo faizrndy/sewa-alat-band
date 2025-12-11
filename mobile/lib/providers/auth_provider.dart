@@ -8,13 +8,11 @@ class AuthProvider with ChangeNotifier {
   String? _token;
   bool _isLoading = false;
   String? _error;
-  bool _isProfileLoading = false; // Separate loading state for profile
 
   // Getters
   User? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
-  bool get isProfileLoading => _isProfileLoading;
   String? get error => _error;
   bool get isAuthenticated => _token != null && _user != null;
 
@@ -59,48 +57,6 @@ class AuthProvider with ChangeNotifier {
     await prefs.remove('user_data');
   }
 
-  // Register new user
-  Future<bool> register({
-    required String name,
-    required String email,
-    required String password,
-    required String phone,
-    String role = 'buyer',
-  }) async {
-    _setLoading(true);
-    _error = null;
-
-    try {
-      final response = await AuthApi.register(
-        name: name,
-        email: email,
-        password: password,
-        phone: phone,
-        role: role,
-      );
-
-      if (response['user'] != null && response['token'] != null) {
-        _user = User.fromJson(response['user']);
-        _token = response['token'];
-
-        // Save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await _saveAuthData(prefs, _token!, _user!);
-
-        _setLoading(false);
-        notifyListeners();
-        return true;
-      } else {
-        throw Exception('Invalid response format');
-      }
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
-      notifyListeners();
-      return false;
-    }
-  }
-
   // Login user
   Future<bool> login({
     required String email,
@@ -137,78 +93,33 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Get user profile - with duplicate call prevention
-  Future<bool> fetchProfile({bool forceRefresh = false}) async {
-    if (_token == null) {
-      _error = 'No authentication token';
-      return false;
-    }
-
-    // Prevent duplicate calls if already loading or if we have user data and not forcing refresh
-    if (_isProfileLoading || (_user != null && !forceRefresh)) {
-      return true; // Return true if we already have data
-    }
-
-    _isProfileLoading = true;
-    _error = null;
-    notifyListeners(); // Notify about loading state change
-
-    try {
-      final response = await AuthApi.getProfile(_token!);
-
-      if (response['user'] != null) {
-        _user = User.fromJson(response['user']);
-
-        // Update stored user data
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_data',
-          'id:${_user!.id},name:${_user!.name},nama_lengkap:${_user!.namaLengkap},email:${_user!.email},nomor_telepon:${_user!.nomorTelepon},role:${_user!.role}'
-        );
-
-        _isProfileLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        throw Exception('Invalid response format');
-      }
-    } catch (e) {
-      _error = e.toString();
-      _isProfileLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Update user profile
-  Future<bool> updateProfile({
-    String? name,
-    String? namaLengkap,
-    String? phone,
+  // Register new user
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    required String phone,
+    String role = 'buyer',
   }) async {
-    if (_token == null) {
-      _error = 'No authentication token';
-      return false;
-    }
-
     _setLoading(true);
     _error = null;
 
     try {
-      final response = await AuthApi.updateProfile(
-        _token!,
+      final response = await AuthApi.register(
         name: name,
-        namaLengkap: namaLengkap,
+        email: email,
+        password: password,
         phone: phone,
+        role: role,
       );
 
-      if (response['user'] != null) {
+      if (response['user'] != null && response['token'] != null) {
         _user = User.fromJson(response['user']);
+        _token = response['token'];
 
-        // Update stored user data
+        // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_data',
-          'id:${_user!.id},name:${_user!.name},nama_lengkap:${_user!.namaLengkap},email:${_user!.email},nomor_telepon:${_user!.nomorTelepon},role:${_user!.role}'
-        );
+        await _saveAuthData(prefs, _token!, _user!);
 
         _setLoading(false);
         notifyListeners();
@@ -254,12 +165,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
     _loadStoredAuthData(prefs);
-
-    // Only fetch fresh profile if we have token but no user data
-    if (_token != null && _user == null && !_isProfileLoading) {
-      await fetchProfile();
-    }
-
     notifyListeners();
   }
 
@@ -275,11 +180,6 @@ class AuthProvider with ChangeNotifier {
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
-  }
-
-  // Refresh profile data manually
-  Future<void> refreshProfile() async {
-    await fetchProfile(forceRefresh: true);
   }
 
   // Clear error

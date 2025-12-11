@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart' show rootBundle;
 
 class ApiService {
   static String? _baseUrl;
@@ -10,15 +9,7 @@ class ApiService {
   static const int _maxRetries = 3;
 
   static Future<String> get baseUrl async {
-    if (_baseUrl == null) {
-      try {
-        final configString = await rootBundle.loadString('assets/config.json');
-        final config = json.decode(configString);
-        _baseUrl = config['api_url'] ?? 'http://127.0.0.1:8000';
-      } catch (e) {
-        _baseUrl = 'http://127.0.0.1:8000';
-      }
-    }
+    _baseUrl ??= 'http://127.0.0.1:8000';
     return _baseUrl!;
   }
 
@@ -41,7 +32,7 @@ class ApiService {
       } catch (e) {
         attempts++;
         if (attempts >= maxRetries) {
-          throw e;
+          rethrow;
         }
         // Wait before retry (exponential backoff)
         await Future.delayed(Duration(seconds: attempts * 2));
@@ -195,84 +186,25 @@ class ApiService {
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
     final statusCode = response.statusCode;
-    final body = response.body;
+    final body = response.body.trim();
 
     if (statusCode >= 200 && statusCode < 300) {
-      if (body.isEmpty) {
-        return {'success': true};
-      }
+      if (body.isEmpty) return {'success': true};
       try {
-        return json.decode(body);
+        final decoded = json.decode(body);
+        return decoded is List ? {'success': true, 'data': decoded} : decoded;
       } catch (e) {
-        throw Exception('Invalid JSON response: $body');
+        throw Exception('Invalid JSON: $body');
       }
     } else {
-      // Try to parse error response
       try {
         final errorData = json.decode(body);
-        final message = errorData['message'] ?? 'Request failed with status $statusCode';
+        final message = errorData['message'] ?? errorData['error'] ?? 'Failed: $statusCode';
         throw Exception(message);
       } catch (e) {
-        throw Exception('Request failed with status $statusCode: $body');
+        throw Exception('Failed: $statusCode - $body');
       }
     }
-  }
-}
-
-// Transaction API endpoints
-class TransaksiApi {
-  // Create new transaction
-  static Future<Map<String, dynamic>> createTransaksi(
-    String token, {
-    required String nama,
-    required String telepon,
-    required String alamat,
-    String? deskripsiLokasi,
-    required double lat,
-    required double lon,
-    required double jarakKm,
-    required String metodePengiriman,
-    required int tarifAntar,
-    required int totalSewa,
-    required int totalBayar,
-    required String identitas, // base64 string
-    required List<Map<String, dynamic>> items,
-  }) async {
-    return ApiService.post('/api/transaksi', {
-      'nama': nama,
-      'telepon': telepon,
-      'alamat': alamat,
-      'deskripsi_lokasi': deskripsiLokasi,
-      'lat': lat,
-      'lon': lon,
-      'jarak_km': jarakKm,
-      'metode_pengiriman': metodePengiriman,
-      'tarif_antar': tarifAntar,
-      'total_sewa': totalSewa,
-      'total_bayar': totalBayar,
-      'identitas': identitas,
-      'items': items,
-    }, token: token);
-  }
-
-  // Get transaction history
-  static Future<Map<String, dynamic>> getRiwayat(String token, String telepon) async {
-    return ApiService.get('/api/riwayat/$telepon', token: token);
-  }
-
-  // Check availability
-  static Future<Map<String, dynamic>> checkAvailability(
-    int alatId,
-    String tanggalMulai,
-    String tanggalSelesai,
-    int jumlahDiminta,
-  ) async {
-    return ApiService.post('/api/alat-band/check-availability', {
-      'alat_id': alatId,
-      'tanggal_mulai': tanggalMulai,
-      'tanggal_selesai': tanggalSelesai,
-      'jumlah_diminta': jumlahDiminta,
-    });
   }
 }
 
@@ -284,7 +216,7 @@ class AuthApi {
     required String email,
     required String password,
     required String phone,
-    String role = 'buyer',
+    required String role,
   }) async {
     return ApiService.post('/api/register', {
       'nama_lengkap': name,
@@ -306,118 +238,8 @@ class AuthApi {
     });
   }
 
-  // Get user profile
-  static Future<Map<String, dynamic>> getProfile(String token) async {
-    return ApiService.get('/api/buyer/profile', token: token);
-  }
-
-  // Update user profile
-  static Future<Map<String, dynamic>> updateProfile(
-    String token, {
-    String? name,
-    String? namaLengkap,
-    String? phone,
-  }) async {
-    final data = <String, dynamic>{};
-    if (name != null) data['name'] = name;
-    if (namaLengkap != null) data['nama_lengkap'] = namaLengkap;
-    if (phone != null) data['nomor_telepon'] = phone;
-
-    return ApiService.put('/api/buyer/update', data, token: token);
-  }
-
   // Logout user
   static Future<Map<String, dynamic>> logout(String token) async {
     return ApiService.post('/api/buyer/logout', {}, token: token);
-  }
-}
-
-// Inventory API endpoints
-class InventoryApi {
-  // Get all alat band
-  static Future<Map<String, dynamic>> getAlatBand({String? search, String? category}) async {
-    String endpoint = '/api/alat-band';
-
-    // Add query parameters if provided
-    final queryParams = <String, String>{};
-    if (search != null && search.isNotEmpty) {
-      queryParams['search'] = search;
-    }
-    if (category != null && category.isNotEmpty) {
-      queryParams['kategori'] = category;
-    }
-
-    if (queryParams.isNotEmpty) {
-      final queryString = queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
-      endpoint += '?$queryString';
-    }
-
-    return ApiService.get(endpoint);
-  }
-
-  // Create new alat band
-  static Future<Map<String, dynamic>> createAlatBand(
-    String token, {
-    required String namaAlat,
-    required String kategori,
-    required int stok,
-    required double hargaSewa,
-    String? deskripsi,
-    required String status,
-    File? gambar,
-  }) async {
-    final data = {
-      'nama_alat': namaAlat,
-      'kategori': kategori,
-      'stok': stok,
-      'harga_sewa': hargaSewa,
-      'status': status,
-    };
-
-    if (deskripsi != null && deskripsi.isNotEmpty) {
-      data['deskripsi'] = deskripsi;
-    }
-
-    if (gambar != null) {
-      return ApiService.postWithFile('/api/alat-band', data, 'gambar', gambar, token: token);
-    } else {
-      return ApiService.post('/api/alat-band', data, token: token);
-    }
-  }
-
-  // Update alat band
-  static Future<Map<String, dynamic>> updateAlatBand(
-    String token,
-    int id, {
-    required String namaAlat,
-    required String kategori,
-    required int stok,
-    required double hargaSewa,
-    String? deskripsi,
-    required String status,
-    File? gambar,
-  }) async {
-    final data = {
-      'nama_alat': namaAlat,
-      'kategori': kategori,
-      'stok': stok,
-      'harga_sewa': hargaSewa,
-      'status': status,
-    };
-
-    if (deskripsi != null && deskripsi.isNotEmpty) {
-      data['deskripsi'] = deskripsi;
-    }
-
-    if (gambar != null) {
-      return ApiService.postWithFile('/api/alat-band/$id', data, 'gambar', gambar, token: token);
-    } else {
-      return ApiService.post('/api/alat-band/$id', data, token: token);
-    }
-  }
-
-  // Delete alat band
-  static Future<Map<String, dynamic>> deleteAlatBand(String token, int id) async {
-    return ApiService.delete('/api/alat-band/$id', token: token);
   }
 }

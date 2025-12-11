@@ -74,16 +74,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/buyer/logout', [AuthController::class, 'logout']);
 
     // === MODULE ADMIN ===
-    
+
     // 1. Dashboard (INI YANG BARU DITAMBAHKAN)
     Route::get('/admin/dashboard', [DashboardController::class, 'index']);
 
     // 2. Kelola Transaksi
     Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
     Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
-    
+
     // 3. Kelola Alat Band (CRUD)
-    Route::post('/alat-band', [AlatBandController::class, 'store']); // Tambah
-    Route::post('/alat-band/{id}', [AlatBandController::class, 'update']); // Update
-    Route::delete('/alat-band/{id}', [AlatBandController::class, 'destroy']); // Hapus
+    Route::get('/admin/alat-band', [AlatBandController::class, 'apiIndex']); // List/Get all
+    Route::post('/admin/alat-band', [AlatBandController::class, 'store']); // Tambah
+    Route::post('/admin/alat-band/{id}', [AlatBandController::class, 'update']); // Update
+    Route::delete('/admin/alat-band/{id}', [AlatBandController::class, 'destroy']); // Hapus
 });

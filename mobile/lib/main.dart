@@ -1,55 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
 
 import 'providers/auth_provider.dart';
-import 'providers/transaksi_provider.dart';
 import 'providers/inventory_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/edit_profile_screen.dart';
-import 'screens/create_transaksi_screen.dart';
-import 'screens/riwayat_transaksi_screen.dart';
-import 'screens/catalog_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/add_inventory_screen.dart';
 import 'screens/edit_inventory_screen.dart';
+import 'utils/constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load configuration
-  final config = await loadConfig();
-
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
 
-  runApp(MyApp(prefs: prefs, config: config));
-}
-
-Future<Map<String, dynamic>> loadConfig() async {
-  try {
-    final configString = await rootBundle.loadString('assets/config.json');
-    return json.decode(configString);
-  } catch (e) {
-    // Fallback configuration
-    return {
-      'api_url': 'http://127.0.0.1:8000',
-      'app_name': 'Sewa Alat Band Mobile',
-      'app_version': '1.0.0',
-      'debug': true,
-    };
-  }
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
-  final Map<String, dynamic> config;
 
-  const MyApp({Key? key, required this.prefs, required this.config}) : super(key: key);
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
@@ -58,15 +32,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => AuthProvider(prefs),
         ),
-        ChangeNotifierProvider(
-          create: (_) => TransaksiProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => InventoryProvider(),
+        ProxyProvider<AuthProvider, InventoryProvider>(
+          create: (_) => InventoryProvider(null),
+          update: (_, authProvider, inventoryProvider) {
+            inventoryProvider?.updateAuthProvider(authProvider);
+            return inventoryProvider ?? InventoryProvider(authProvider);
+          },
         ),
       ],
       child: MaterialApp(
-        title: config['app_name'] ?? 'Sewa Alat Band Mobile',
+        title: 'Sewa Alat Band - Admin',
         theme: ThemeData(
           primarySwatch: Colors.purple,
           scaffoldBackgroundColor: Colors.grey.shade50,
@@ -75,8 +50,8 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.white,
             elevation: 0,
             centerTitle: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
+            shape: RoundedRectangleBorder(
+              borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(20),
               ),
             ),
@@ -94,23 +69,23 @@ class MyApp extends StatelessWidget {
           ),
           inputDecorationTheme: InputDecorationTheme(
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(Constants.borderRadius),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(Constants.borderRadius),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+              borderRadius: BorderRadius.circular(Constants.borderRadius),
+              borderSide: BorderSide(color: Colors.purple.shade400, width: Constants.borderWidth),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(Constants.borderRadius),
               borderSide: BorderSide(color: Colors.red.shade400),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+              borderRadius: BorderRadius.circular(Constants.borderRadius),
+              borderSide: BorderSide(color: Colors.red.shade400, width: Constants.borderWidth),
             ),
             filled: true,
             fillColor: Colors.white,
@@ -133,14 +108,6 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
-          '/profile': (context) => const ProfileScreen(),
-          '/edit-profile': (context) => const EditProfileScreen(),
-          '/catalog': (context) => const CatalogScreen(),
-          '/create-transaksi': (context) {
-            final alat = ModalRoute.of(context)!.settings.arguments as dynamic;
-            return CreateTransaksiScreen(alat: alat);
-          },
-          '/riwayat-transaksi': (context) => const RiwayatTransaksiScreen(),
           '/inventory': (context) => const InventoryScreen(),
           '/add-inventory': (context) => const AddInventoryScreen(),
           '/edit-inventory': (context) {
@@ -148,14 +115,14 @@ class MyApp extends StatelessWidget {
             return EditInventoryScreen(alat: alat);
           },
         },
-        debugShowCheckedModeBanner: config['debug'] ?? false,
+        debugShowCheckedModeBanner: true,
       ),
     );
   }
 }
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();
@@ -221,12 +188,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         if (authProvider.isAuthenticated) {
-          // Check if user is admin
-          if (authProvider.user?.role == 'admin') {
-            return const InventoryScreen();
-          } else {
-            return const CatalogScreen();
-          }
+          return const InventoryScreen();
         }
 
         return const LoginScreen();

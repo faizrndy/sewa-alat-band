@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/inventory_provider.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
 
 class AddInventoryScreen extends StatefulWidget {
   const AddInventoryScreen({super.key});
@@ -73,10 +71,15 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                     const SizedBox(height: 24),
 
                     // Form Fields
-                    CustomTextField(
+                    TextFormField(
                       controller: _namaController,
-                      labelText: 'Nama Alat Musik',
-                      hintText: 'Contoh: Yamaha Pacifica 612VII',
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Alat Musik',
+                        hintText: 'Contoh: Yamaha Pacifica 612VII',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Nama alat musik tidak boleh kosong';
@@ -88,7 +91,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
 
                     // Kategori Dropdown
                     DropdownButtonFormField<String>(
-                      value: _selectedKategori,
+                      initialValue: _selectedKategori,
                       decoration: InputDecoration(
                         labelText: 'Kategori',
                         border: OutlineInputBorder(
@@ -117,10 +120,15 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                     const SizedBox(height: 16),
 
                     // Stok Field
-                    CustomTextField(
+                    TextFormField(
                       controller: _stokController,
-                      labelText: 'Stok',
-                      hintText: '0',
+                      decoration: const InputDecoration(
+                        labelText: 'Stok',
+                        hintText: '0',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -163,7 +171,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
 
                     // Status Dropdown
                     DropdownButtonFormField<String>(
-                      value: _selectedStatus,
+                      initialValue: _selectedStatus,
                       decoration: InputDecoration(
                         labelText: 'Status',
                         border: OutlineInputBorder(
@@ -192,10 +200,15 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                     const SizedBox(height: 16),
 
                     // Deskripsi Field
-                    CustomTextField(
+                    TextFormField(
                       controller: _deskripsiController,
-                      labelText: 'Deskripsi (Opsional)',
-                      hintText: 'Deskripsikan spesifikasi alat musik...',
+                      decoration: const InputDecoration(
+                        labelText: 'Deskripsi (Opsional)',
+                        hintText: 'Deskripsikan spesifikasi alat musik...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
                       maxLines: 3,
                     ),
                     const SizedBox(height: 24),
@@ -218,10 +231,34 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                     const SizedBox(height: 24),
 
                     // Submit Button
-                    CustomButton(
-                      text: 'Tambah Alat Musik',
-                      onPressed: _submitForm,
-                      isLoading: inventoryProvider.isLoading,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: inventoryProvider.isLoading ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: inventoryProvider.isLoading ? Colors.grey : Colors.purple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: inventoryProvider.isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Tambah Alat Musik',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
                     ),
                   ],
                 ),

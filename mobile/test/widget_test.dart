@@ -17,15 +17,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     final prefs = await SharedPreferences.getInstance();
-    final config = {
-      'api_url': 'http://127.0.0.1:8000',
-      'app_name': 'Test App',
-      'app_version': '1.0.0',
-      'debug': true,
-    };
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(prefs: prefs, config: config));
+    await tester.pumpWidget(MyApp(prefs: prefs));
 
     // Wait for the app to load
     await tester.pumpAndSettle();

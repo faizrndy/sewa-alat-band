@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -68,12 +66,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    CustomTextField(
+                    TextFormField(
                       controller: _emailController,
-                      labelText: 'Email',
-                      hintText: 'Masukkan email Anda',
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        hintText: 'Masukkan email Anda',
+                        prefixIcon: const Icon(Icons.email),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Email tidak boleh kosong';
@@ -87,22 +90,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 16),
 
-                    CustomTextField(
+                    TextFormField(
                       controller: _passwordController,
-                      labelText: 'Password',
-                      hintText: 'Masukkan password Anda',
-                      obscureText: _obscurePassword,
-                      prefixIcon: Icons.lock,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Masukkan password Anda',
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      obscureText: _obscurePassword,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Password tidak boleh kosong';
@@ -118,10 +126,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, child) {
-                        return CustomButton(
-                          text: 'Masuk',
-                          isLoading: authProvider.isLoading,
-                          onPressed: authProvider.isLoading ? null : _login,
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: authProvider.isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: authProvider.isLoading ? Colors.grey : Colors.purple,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: authProvider.isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Masuk',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
                         );
                       },
                     ),
@@ -162,7 +194,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 32),
 
-              // Register link
+              // Register link - Commented out as requested
+              /*
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -184,6 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+              */
             ],
           ),
         ),
@@ -197,14 +231,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.clearError();
 
-    final success = await authProvider.login(
+    await authProvider.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
-
-    if (success && mounted) {
-      Navigator.pushReplacementNamed(context, '/profile');
-    }
   }
 
   @override

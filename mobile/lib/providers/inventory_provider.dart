@@ -3,21 +3,58 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/alat_band.dart';
 import '../services/api_service.dart';
+import 'auth_provider.dart';
 
+/// Provider untuk mengelola state inventory/alat musik
+/// Menangani CRUD operations, search, filter, dan image upload
 class InventoryProvider with ChangeNotifier {
-  List<AlatBand> _alatList = [];
-  bool _isLoading = false;
-  String? _error;
-  String _searchQuery = '';
-  String? _selectedCategory;
-  File? _selectedImage;
+  // Dependency injection untuk authentication
+  AuthProvider? _authProvider;
 
-  // Getters
+  // Private state variables
+  List<AlatBand> _alatList = [];        // List semua alat musik
+  bool _isLoading = false;              // Status loading
+  String? _error;                       // Error message jika ada
+  String _searchQuery = '';             // Query pencarian
+  String? _selectedCategory;            // Kategori yang dipilih untuk filter
+  File? _selectedImage;                 // Gambar yang dipilih untuk upload
+
+  // Constructor dengan dependency injection
+  InventoryProvider(this._authProvider);
+
+  /// Update auth provider reference (digunakan oleh ProxyProvider)
+  void updateAuthProvider(AuthProvider authProvider) {
+    _authProvider = authProvider;
+  }
+
+  /// Helper method untuk menangani error secara konsisten
+  void _handleError(Object error) {
+    _error = error.toString();
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Helper method untuk set loading state
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+
+  // ==================== PUBLIC GETTERS ====================
+
+  /// List alat musik yang sudah difilter berdasarkan search dan kategori
   List<AlatBand> get alatList => _filteredAlatList;
+
+  /// Status loading untuk operasi async
   bool get isLoading => _isLoading;
+
+  /// Error message jika ada kesalahan
   String? get error => _error;
+
+  /// Gambar yang sedang dipilih untuk upload
   File? get selectedImage => _selectedImage;
 
+  /// List kategori alat musik yang tersedia
   List<String> get categories => [
     'Gitar',
     'Bass',
@@ -29,25 +66,23 @@ class InventoryProvider with ChangeNotifier {
     'Lainnya'
   ];
 
-  List<String> get statuses => [
-    'Tersedia',
-    'Disewa',
-    'Dalam Perbaikan'
-  ];
+  // ==================== PRIVATE COMPUTED PROPERTIES ====================
 
-  // Filtered list berdasarkan search dan category
+  /// Computed property untuk list alat musik yang sudah difilter
+  /// Menggabungkan filter berdasarkan search query dan kategori
   List<AlatBand> get _filteredAlatList {
     List<AlatBand> filtered = _alatList;
 
-    // Filter berdasarkan search query
+    // Filter berdasarkan search query (nama alat atau kategori)
     if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
       filtered = filtered.where((alat) =>
-        alat.namaAlat.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        alat.kategori.toLowerCase().contains(_searchQuery.toLowerCase())
+        alat.namaAlat.toLowerCase().contains(query) ||
+        alat.kategori.toLowerCase().contains(query)
       ).toList();
     }
 
-    // Filter berdasarkan kategori
+    // Filter berdasarkan kategori yang dipilih
     if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
       filtered = filtered.where((alat) => alat.kategori == _selectedCategory).toList();
     }
@@ -55,44 +90,45 @@ class InventoryProvider with ChangeNotifier {
     return filtered;
   }
 
-  // Methods
+  // ==================== PUBLIC METHODS ====================
+
+  /// Set query pencarian dan notify listeners
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
 
+  /// Set kategori yang dipilih untuk filter dan notify listeners
   void setSelectedCategory(String? category) {
     _selectedCategory = category;
     notifyListeners();
   }
 
+  /// Set gambar yang dipilih untuk upload dan notify listeners
   void setSelectedImage(File? image) {
     _selectedImage = image;
     notifyListeners();
   }
 
+  /// Fetch list alat musik dari server
+  /// Menggunakan endpoint admin dengan authentication token
   Future<void> fetchAlatList() async {
-    _isLoading = true;
+    _setLoading(true);
     _error = null;
-    notifyListeners();
 
     try {
-      final response = await ApiService.get('/api/alat-band');
-      if (response['success'] == true || response is List) {
-        final data = response is List ? response : response['data'];
-        _alatList = (data as List).map((json) => AlatBand.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to fetch data');
-      }
+      final token = _authProvider?.token;
+      final response = await ApiService.get('/api/admin/alat-band', token: token);
+      final data = response is List ? response : response['data'] ?? [];
+      _alatList = (data as List).map((json) => AlatBand.fromJson(json)).toList();
     } catch (e) {
-      _error = e.toString();
+      _handleError(e);
       _alatList = [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
+  /// Tambah alat musik baru ke database
+  /// Mendukung upload gambar dan akan refresh list setelah berhasil
   Future<bool> addAlatBand({
     required String namaAlat,
     required String kategori,
@@ -101,8 +137,7 @@ class InventoryProvider with ChangeNotifier {
     String? deskripsi,
     required String status,
   }) async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
 
     try {
       final Map<String, dynamic> data = {
@@ -117,31 +152,25 @@ class InventoryProvider with ChangeNotifier {
         data['deskripsi'] = deskripsi;
       }
 
-      // Jika ada gambar yang dipilih
+      final token = _authProvider?.token;
+
       if (_selectedImage != null) {
-        await ApiService.postWithFile(
-          '/api/alat-band',
-          data,
-          'gambar',
-          _selectedImage!
-        );
+        await ApiService.postWithFile('/api/admin/alat-band', data, 'gambar', _selectedImage!, token: token);
       } else {
-        await ApiService.post('/api/alat-band', data);
+        await ApiService.post('/api/admin/alat-band', data, token: token);
       }
 
-      // Refresh list setelah add
       await fetchAlatList();
       _selectedImage = null;
       return true;
     } catch (e) {
-      _error = e.toString();
+      _handleError(e);
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
+  /// Update data alat musik yang sudah ada
+  /// Sama seperti add tapi menggunakan endpoint dengan ID
   Future<bool> updateAlatBand({
     required int id,
     required String namaAlat,
@@ -151,8 +180,7 @@ class InventoryProvider with ChangeNotifier {
     String? deskripsi,
     required String status,
   }) async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
 
     try {
       final Map<String, dynamic> data = {
@@ -167,50 +195,40 @@ class InventoryProvider with ChangeNotifier {
         data['deskripsi'] = deskripsi;
       }
 
-      // Jika ada gambar baru yang dipilih
+      final token = _authProvider?.token;
+
       if (_selectedImage != null) {
-        await ApiService.postWithFile(
-          '/api/alat-band/$id',
-          data,
-          'gambar',
-          _selectedImage!
-        );
+        await ApiService.postWithFile('/api/admin/alat-band/$id', data, 'gambar', _selectedImage!, token: token);
       } else {
-        await ApiService.post('/api/alat-band/$id', data);
+        await ApiService.post('/api/admin/alat-band/$id', data, token: token);
       }
 
-      // Refresh list setelah update
       await fetchAlatList();
       _selectedImage = null;
       return true;
     } catch (e) {
-      _error = e.toString();
+      _handleError(e);
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
+  /// Hapus alat musik berdasarkan ID
+  /// Akan refresh list setelah berhasil dihapus
   Future<bool> deleteAlatBand(int id) async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
 
     try {
-      await ApiService.delete('/api/alat-band/$id');
-      // Refresh list setelah delete
+      final token = _authProvider?.token;
+      await ApiService.delete('/api/admin/alat-band/$id', token: token);
       await fetchAlatList();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _handleError(e);
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
-  // Pick image from gallery
+  /// Pilih gambar dari gallery untuk upload
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -221,13 +239,13 @@ class InventoryProvider with ChangeNotifier {
     }
   }
 
-  // Clear error
+  /// Clear error message
   void clearError() {
     _error = null;
     notifyListeners();
   }
 
-  // Clear selected image
+  /// Clear gambar yang dipilih
   void clearSelectedImage() {
     _selectedImage = null;
     notifyListeners();
