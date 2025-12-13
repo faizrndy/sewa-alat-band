@@ -99,7 +99,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String phone,
-    String role = 'buyer',
+    String role = 'admin',
   }) async {
     _setLoading(true);
     _error = null;
