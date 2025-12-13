@@ -14,7 +14,7 @@ import 'utils/constants.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize SharedPreferences
+  Provider.debugCheckInvalidValueType = null;
   final prefs = await SharedPreferences.getInstance();
 
   runApp(MyApp(prefs: prefs));
@@ -32,11 +32,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => AuthProvider(prefs),
         ),
-        ProxyProvider<AuthProvider, InventoryProvider>(
+        ChangeNotifierProxyProvider<AuthProvider, InventoryProvider>(
           create: (_) => InventoryProvider(null),
-          update: (_, authProvider, inventoryProvider) {
-            inventoryProvider?.updateAuthProvider(authProvider);
-            return inventoryProvider ?? InventoryProvider(authProvider);
+          update: (_, authProvider, previous) {
+            // Jika sudah ada instance sebelumnya, update authProvider-nya
+            if (previous != null) {
+              previous.updateAuthProvider(authProvider);
+              return previous;
+            }
+            // Jika belum ada, buat instance baru
+            return InventoryProvider(authProvider);
           },
         ),
       ],

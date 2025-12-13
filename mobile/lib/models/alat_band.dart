@@ -7,7 +7,6 @@ class AlatBand {
   final int stok;
   final double hargaSewa;
   final String? deskripsi;
-  final String? gambar;
   final String status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -19,7 +18,6 @@ class AlatBand {
     required this.stok,
     required this.hargaSewa,
     this.deskripsi,
-    this.gambar,
     required this.status,
     this.createdAt,
     this.updatedAt,
@@ -33,7 +31,6 @@ class AlatBand {
       stok: json['stok'] ?? 0,
       hargaSewa: double.parse(json['harga_sewa'].toString()),
       deskripsi: json['deskripsi'],
-      gambar: json['gambar'],
       status: json['status'] ?? 'Tersedia',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -52,7 +49,6 @@ class AlatBand {
       'stok': stok,
       'harga_sewa': hargaSewa,
       'deskripsi': deskripsi,
-      'gambar': gambar,
       'status': status,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

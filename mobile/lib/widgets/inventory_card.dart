@@ -28,8 +28,20 @@ class InventoryCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Image
-              _buildImage(),
+              // Icon placeholder
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[200],
+                ),
+                child: const Icon(
+                  Icons.music_note,
+                  size: 40,
+                  color: Colors.grey,
+                ),
+              ),
               const SizedBox(width: 16),
 
               // Content
@@ -129,40 +141,6 @@ class InventoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImage() {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[200],
-      ),
-              child: alat.gambar != null && alat.gambar!.isNotEmpty
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                _getFullImageUrl(alat.gambar!),
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
-                ),
-              ),
-            )
-          : const Icon(
-              Icons.music_note,
-              size: 40,
-              color: Colors.grey,
-            ),
-    );
-  }
-
   Widget _buildStatusBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -180,11 +158,5 @@ class InventoryCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getFullImageUrl(String imagePath) {
-    // Assuming the API base URL is http://127.0.0.1:8000
-    // You might need to adjust this based on your API configuration
-    return 'http://127.0.0.1:8000/$imagePath';
   }
 }

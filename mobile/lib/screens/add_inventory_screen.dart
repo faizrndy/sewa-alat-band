@@ -39,6 +39,15 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Clear error saat screen dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<InventoryProvider>().clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _namaController.dispose();
     _stokController.dispose();
@@ -66,10 +75,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Image Preview
-                    _buildImagePreview(inventoryProvider),
-                    const SizedBox(height: 24),
-
                     // Form Fields
                     TextFormField(
                       controller: _namaController,
@@ -267,76 +272,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
     );
   }
 
-  Widget _buildImagePreview(InventoryProvider provider) {
-    return Column(
-      children: [
-        const Text(
-          'Foto Alat Musik (Opsional)',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey[50],
-          ),
-          child: provider.selectedImage != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    provider.selectedImage!,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.image_outlined,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Belum ada gambar dipilih',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => provider.pickImage(),
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Pilih dari Galeri'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-            if (provider.selectedImage != null) ...[
-              const SizedBox(width: 12),
-              IconButton(
-                onPressed: () => provider.clearSelectedImage(),
-                icon: const Icon(Icons.clear),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.red[50],
-                  foregroundColor: Colors.red,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-
   void _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -355,11 +290,60 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
     });
 
     try {
+      // Parse stok dengan error handling
+      int stok;
+      try {
+        stok = int.parse(_stokController.text.trim());
+        if (stok < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Stok tidak boleh negatif')),
+          );
+          return;
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Stok harus berupa angka')),
+        );
+        return;
+      }
+
+      // Parse harga dengan error handling
+      // Handle format Indonesia (1.000.000 atau 1,000,000 atau 1000000)
+      double hargaSewa;
+      try {
+        String hargaText = _hargaController.text.trim();
+        // Hapus semua pemisah ribuan (titik atau koma yang bukan desimal)
+        // Jika ada koma di akhir atau di tengah sebagai pemisah ribuan, hapus
+        // Jika ada titik sebagai pemisah ribuan, hapus
+        // Cek apakah ada koma sebagai desimal (hanya satu koma di akhir)
+        final parts = hargaText.split(',');
+        if (parts.length == 2 && parts[1].length <= 2) {
+          // Koma sebagai desimal (format: 1000,50)
+          hargaText = parts[0].replaceAll('.', '') + '.' + parts[1];
+        } else {
+          // Koma atau titik sebagai pemisah ribuan
+          hargaText = hargaText.replaceAll('.', '').replaceAll(',', '');
+        }
+        
+        hargaSewa = double.parse(hargaText);
+        if (hargaSewa < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Harga sewa tidak boleh negatif')),
+          );
+          return;
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Harga sewa harus berupa angka yang valid')),
+        );
+        return;
+      }
+
       final success = await inventoryProvider.addAlatBand(
         namaAlat: _namaController.text.trim(),
         kategori: _selectedKategori,
-        stok: int.parse(_stokController.text),
-        hargaSewa: double.parse(_hargaController.text.replaceAll(',', '')),
+        stok: stok,
+        hargaSewa: hargaSewa,
         deskripsi: _deskripsiController.text.trim().isEmpty
             ? null
             : _deskripsiController.text.trim(),
@@ -373,7 +357,21 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
         Navigator.pop(context);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${inventoryProvider.error}')),
+          SnackBar(
+            content: Text('Error: ${inventoryProvider.error ?? "Terjadi kesalahan"}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     } finally {

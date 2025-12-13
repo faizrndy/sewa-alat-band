@@ -194,8 +194,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 32),
 
-              // Register link - Commented out as requested
-              /*
+              // Register link 
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              */
+              
             ],
           ),
         ),

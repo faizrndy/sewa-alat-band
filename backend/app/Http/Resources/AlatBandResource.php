@@ -20,7 +20,6 @@ class AlatBandResource extends JsonResource
         'kategori' => $this->kategori,
         'harga_sewa' => (int) $this->harga_sewa,
         'status' => $this->status,
-        'gambar_url' => asset($this->gambar), // Kita format URL-nya di sini
         'deskripsi' => $this->deskripsi,
         'stok' => (int) $this->stok,
     ];

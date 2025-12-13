@@ -36,7 +36,6 @@ class AlatBandController extends Controller
     /**
      * Tambah Alat Baru (Admin)
      * * Endpoint ini digunakan untuk menambahkan data alat musik baru ke database.
-     * Mendukung upload file gambar.
      */
     public function store(Request $request)
     {
@@ -47,19 +46,10 @@ class AlatBandController extends Controller
             'stok'       => 'required|integer|min:0',
             'harga_sewa' => 'required|numeric|min:0',
             'deskripsi'  => 'nullable|string',
-            'gambar'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'     => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
-        $data = $request->all();
-
-        // Proses Upload Gambar
-        if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images/alat-band'), $filename);
-            $data['gambar'] = 'images/alat-band/' . $filename;
-        }
+        $data = $request->only(['nama_alat', 'kategori', 'stok', 'harga_sewa', 'deskripsi', 'status']);
 
         $alat = AlatBand::create($data);
 
@@ -86,7 +76,6 @@ class AlatBandController extends Controller
     /**
      * Update Data Alat
      * * Endpoint ini digunakan untuk mengubah data alat musik.
-     * Gunakan metode POST dengan _method=PUT atau form-data untuk update gambar.
      */
     public function update(Request $request, $id)
     {
@@ -98,26 +87,10 @@ class AlatBandController extends Controller
             'stok'       => 'required|integer|min:0',
             'harga_sewa' => 'required|numeric|min:0',
             'deskripsi'  => 'nullable|string',
-            'gambar'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
             'status'     => 'required|in:Tersedia,Disewa,Dalam Perbaikan',
         ]);
 
-        $data = $request->except(['gambar']); 
-
-        // Proses Upload Gambar Baru (Jika Ada)
-        if ($request->hasFile('gambar')) {
-            // Hapus gambar lama fisik
-            if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
-                unlink(public_path($alat->gambar));
-            }
-
-            $file = $request->file('gambar');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
-            $file->move(public_path('images/alat-band'), $filename);
-            
-            $data['gambar'] = 'images/alat-band/' . $filename;
-        }
+        $data = $request->only(['nama_alat', 'kategori', 'stok', 'harga_sewa', 'deskripsi', 'status']);
 
         $alat->update($data);
 
@@ -130,17 +103,11 @@ class AlatBandController extends Controller
 
     /**
      * Hapus Alat
-     * * Menghapus data alat musik beserta file gambarnya dari server.
+     * * Menghapus data alat musik dari database.
      */
     public function destroy($id)
     {
         $alat = AlatBand::findOrFail($id);
-
-        // Hapus file gambar jika ada
-        if (!empty($alat->gambar) && file_exists(public_path($alat->gambar))) {
-            unlink(public_path($alat->gambar));
-        }
-
         $alat->delete();
 
         if (request()->wantsJson() || request()->is('api/*')) {
@@ -174,11 +141,20 @@ class AlatBandController extends Controller
             $query->where('nama_alat', 'like', '%' . $request->search . '%');
         }
 
-        $alatBand = $query->orderBy('created_at', 'desc')->get();
+        $alatBand = $query->select([
+            'id',
+            'nama_alat',
+            'kategori',
+            'stok',
+            'harga_sewa',
+            'deskripsi',
+            'status',
+            'created_at',
+            'updated_at'
+        ])->orderBy('created_at', 'desc')->get();
 
-        // Modifikasi data agar URL gambar lengkap
+        // Modifikasi data
         $alatBand->transform(function ($item) {
-            $item->gambar = asset($item->gambar);
             $item->harga_sewa = (int) $item->harga_sewa;
             return $item;
         });
@@ -204,7 +180,6 @@ class AlatBandController extends Controller
             'kategori' => $alat->kategori,
             'harga_sewa' => (int) $alat->harga_sewa,
             'status' => $alat->status,
-            'gambar' => asset($alat->gambar),
             'deskripsi' => $alat->deskripsi,
             'stok' => (int) $alat->stok,
             'created_at' => $alat->created_at->format('d-m-Y H:i')

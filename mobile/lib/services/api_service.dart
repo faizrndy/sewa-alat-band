@@ -3,6 +3,15 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 
+// Custom exception for 401 Unauthorized errors
+class UnauthorizedException implements Exception {
+  final String message;
+  UnauthorizedException(this.message);
+  
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   static String? _baseUrl;
   static const Duration _timeout = Duration(seconds: 30);
@@ -47,7 +56,7 @@ class ApiService {
       try {
         final baseUrlValue = await baseUrl;
         final headers = {..._headers};
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
           headers['Authorization'] = 'Bearer $token';
         }
 
@@ -57,12 +66,15 @@ class ApiService {
         ).timeout(_timeout);
 
         return _handleResponse(response);
+      } on UnauthorizedException {
+        rethrow;
       } on TimeoutException {
         throw Exception('Connection timeout. Please check your internet connection.');
       } catch (e) {
         if (e is SocketException) {
           throw Exception('No internet connection. Please check your network.');
         }
+        if (e is UnauthorizedException) rethrow;
         throw Exception('Network error: $e');
       }
     }, _maxRetries);
@@ -74,7 +86,7 @@ class ApiService {
       try {
         final baseUrlValue = await baseUrl;
         final headers = {..._headers};
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
           headers['Authorization'] = 'Bearer $token';
         }
 
@@ -85,12 +97,15 @@ class ApiService {
         ).timeout(_timeout);
 
         return _handleResponse(response);
+      } on UnauthorizedException {
+        rethrow;
       } on TimeoutException {
         throw Exception('Connection timeout. Please check your internet connection.');
       } catch (e) {
         if (e is SocketException) {
           throw Exception('No internet connection. Please check your network.');
         }
+        if (e is UnauthorizedException) rethrow;
         throw Exception('Network error: $e');
       }
     }, _maxRetries);
@@ -101,7 +116,7 @@ class ApiService {
     try {
       final baseUrlValue = await baseUrl;
       final headers = {..._headers};
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
 
@@ -112,7 +127,10 @@ class ApiService {
       );
 
       return _handleResponse(response);
+    } on UnauthorizedException {
+      rethrow;
     } catch (e) {
+      if (e is UnauthorizedException) rethrow;
       throw Exception('Network error: $e');
     }
   }
@@ -122,7 +140,7 @@ class ApiService {
     try {
       final baseUrlValue = await baseUrl;
       final headers = {..._headers};
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
 
@@ -132,7 +150,10 @@ class ApiService {
       );
 
       return _handleResponse(response);
+    } on UnauthorizedException {
+      rethrow;
     } catch (e) {
+      if (e is UnauthorizedException) rethrow;
       throw Exception('Network error: $e');
     }
   }
@@ -145,43 +166,69 @@ class ApiService {
     File file, {
     String? token
   }) async {
-    try {
-      final baseUrlValue = await baseUrl;
+    return _retry(() async {
+      try {
+        final baseUrlValue = await baseUrl;
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrlValue$endpoint'),
-      );
-
-      // Add token if provided
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      // Add text fields
-      data.forEach((key, value) {
-        if (value != null) {
-          request.fields[key] = value.toString();
-        }
-      });
-
-      // Add file
-      if (file.existsSync()) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            fileFieldName,
-            file.path,
-          ),
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrlValue$endpoint'),
         );
+
+        // Add headers
+        request.headers.addAll({
+          'Accept': 'application/json',
+        });
+
+        // Add token if provided
+        if (token != null && token.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+
+        // Add text fields
+        data.forEach((key, value) {
+          if (value != null) {
+            // Convert numbers to string properly
+            if (value is int || value is double) {
+              request.fields[key] = value.toString();
+            } else {
+              request.fields[key] = value.toString();
+            }
+          }
+        });
+
+        // Add file with error handling
+        if (!file.existsSync()) {
+          throw Exception('File tidak ditemukan: ${file.path}');
+        }
+
+        try {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              fileFieldName,
+              file.path,
+            ),
+          );
+        } catch (e) {
+          throw Exception('Gagal membaca file: $e');
+        }
+
+        final streamedResponse = await request.send().timeout(_timeout);
+        final response = await http.Response.fromStream(streamedResponse);
+
+        return _handleResponse(response);
+      } on UnauthorizedException {
+        rethrow;
+      } on TimeoutException {
+        throw Exception('Connection timeout. Request memakan waktu terlalu lama.');
+      } catch (e) {
+        if (e is SocketException) {
+          throw Exception('No internet connection. Please check your network.');
+        }
+        if (e is UnauthorizedException) rethrow;
+        throw Exception('Error: $e');
       }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    }, _maxRetries);
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
@@ -197,11 +244,35 @@ class ApiService {
         throw Exception('Invalid JSON: $body');
       }
     } else {
+      // Handle 401 Unauthorized specifically
+      if (statusCode == 401) {
+        try {
+          final errorData = json.decode(body);
+          final message = errorData['message'] ?? 'Unauthorized: Token tidak valid atau telah kedaluwarsa';
+          throw UnauthorizedException(message);
+        } catch (e) {
+          if (e is UnauthorizedException) rethrow;
+          throw UnauthorizedException('Unauthorized: Silakan login kembali');
+        }
+      }
+      
+      // Handle other errors (422 validation errors, etc.)
       try {
         final errorData = json.decode(body);
-        final message = errorData['message'] ?? errorData['error'] ?? 'Failed: $statusCode';
+        String message = errorData['message'] ?? errorData['error'] ?? 'Failed: $statusCode';
+        
+        // Handle validation errors (422)
+        if (statusCode == 422 && errorData['errors'] != null) {
+          final errors = errorData['errors'] as Map<String, dynamic>;
+          final firstError = errors.values.first;
+          if (firstError is List && firstError.isNotEmpty) {
+            message = firstError.first.toString();
+          }
+        }
+        
         throw Exception(message);
       } catch (e) {
+        if (e is Exception) rethrow;
         throw Exception('Failed: $statusCode - $body');
       }
     }

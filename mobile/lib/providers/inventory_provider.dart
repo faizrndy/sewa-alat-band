@@ -1,12 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../models/alat_band.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 
 /// Provider untuk mengelola state inventory/alat musik
-/// Menangani CRUD operations, search, filter, dan image upload
+/// Menangani CRUD operations, search, dan filter
 class InventoryProvider with ChangeNotifier {
   // Dependency injection untuk authentication
   AuthProvider? _authProvider;
@@ -17,7 +15,6 @@ class InventoryProvider with ChangeNotifier {
   String? _error;                       // Error message jika ada
   String _searchQuery = '';             // Query pencarian
   String? _selectedCategory;            // Kategori yang dipilih untuk filter
-  File? _selectedImage;                 // Gambar yang dipilih untuk upload
 
   // Constructor dengan dependency injection
   InventoryProvider(this._authProvider);
@@ -29,7 +26,26 @@ class InventoryProvider with ChangeNotifier {
 
   /// Helper method untuk menangani error secara konsisten
   void _handleError(Object error) {
-    _error = error.toString();
+    // Extract error message yang lebih user-friendly
+    String errorMessage = error.toString();
+    
+    // Hapus prefix "Exception: " jika ada
+    if (errorMessage.startsWith('Exception: ')) {
+      errorMessage = errorMessage.substring(11);
+    }
+    
+    // Handle error messages yang lebih spesifik
+    if (errorMessage.contains('Unauthorized') || errorMessage.contains('401')) {
+      errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
+    } else if (errorMessage.contains('422') || errorMessage.contains('validation')) {
+      errorMessage = 'Data yang dimasukkan tidak valid. Periksa kembali form Anda.';
+    } else if (errorMessage.contains('500') || errorMessage.contains('Internal Server Error')) {
+      errorMessage = 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
+    } else if (errorMessage.contains('Network') || errorMessage.contains('Connection')) {
+      errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    }
+    
+    _error = errorMessage;
     _isLoading = false;
     notifyListeners();
   }
@@ -50,9 +66,6 @@ class InventoryProvider with ChangeNotifier {
 
   /// Error message jika ada kesalahan
   String? get error => _error;
-
-  /// Gambar yang sedang dipilih untuk upload
-  File? get selectedImage => _selectedImage;
 
   /// List kategori alat musik yang tersedia
   List<String> get categories => [
@@ -104,12 +117,6 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Set gambar yang dipilih untuk upload dan notify listeners
-  void setSelectedImage(File? image) {
-    _selectedImage = image;
-    notifyListeners();
-  }
-
   /// Fetch list alat musik dari server
   /// Menggunakan endpoint admin dengan authentication token
   Future<void> fetchAlatList() async {
@@ -118,9 +125,20 @@ class InventoryProvider with ChangeNotifier {
 
     try {
       final token = _authProvider?.token;
+      if (token == null || token.isEmpty) {
+        throw UnauthorizedException('Token tidak ditemukan. Silakan login kembali.');
+      }
       final response = await ApiService.get('/api/admin/alat-band', token: token);
       final data = response is List ? response : response['data'] ?? [];
       _alatList = (data as List).map((json) => AlatBand.fromJson(json)).toList();
+      _setLoading(false);
+    } on UnauthorizedException catch (e) {
+      // Auto logout on 401
+      if (_authProvider != null) {
+        await _authProvider!.logout();
+      }
+      _handleError(e);
+      _alatList = [];
     } catch (e) {
       _handleError(e);
       _alatList = [];
@@ -128,7 +146,7 @@ class InventoryProvider with ChangeNotifier {
   }
 
   /// Tambah alat musik baru ke database
-  /// Mendukung upload gambar dan akan refresh list setelah berhasil
+  /// Akan refresh list setelah berhasil
   Future<bool> addAlatBand({
     required String namaAlat,
     required String kategori,
@@ -153,16 +171,20 @@ class InventoryProvider with ChangeNotifier {
       }
 
       final token = _authProvider?.token;
-
-      if (_selectedImage != null) {
-        await ApiService.postWithFile('/api/admin/alat-band', data, 'gambar', _selectedImage!, token: token);
-      } else {
-        await ApiService.post('/api/admin/alat-band', data, token: token);
+      if (token == null || token.isEmpty) {
+        throw UnauthorizedException('Token tidak ditemukan. Silakan login kembali.');
       }
 
+      await ApiService.post('/api/admin/alat-band', data, token: token);
       await fetchAlatList();
-      _selectedImage = null;
       return true;
+    } on UnauthorizedException catch (e) {
+      // Auto logout on 401
+      if (_authProvider != null) {
+        await _authProvider!.logout();
+      }
+      _handleError(e);
+      return false;
     } catch (e) {
       _handleError(e);
       return false;
@@ -196,16 +218,20 @@ class InventoryProvider with ChangeNotifier {
       }
 
       final token = _authProvider?.token;
-
-      if (_selectedImage != null) {
-        await ApiService.postWithFile('/api/admin/alat-band/$id', data, 'gambar', _selectedImage!, token: token);
-      } else {
-        await ApiService.post('/api/admin/alat-band/$id', data, token: token);
+      if (token == null || token.isEmpty) {
+        throw UnauthorizedException('Token tidak ditemukan. Silakan login kembali.');
       }
 
+      await ApiService.post('/api/admin/alat-band/$id', data, token: token);
       await fetchAlatList();
-      _selectedImage = null;
       return true;
+    } on UnauthorizedException catch (e) {
+      // Auto logout on 401
+      if (_authProvider != null) {
+        await _authProvider!.logout();
+      }
+      _handleError(e);
+      return false;
     } catch (e) {
       _handleError(e);
       return false;
@@ -219,35 +245,28 @@ class InventoryProvider with ChangeNotifier {
 
     try {
       final token = _authProvider?.token;
+      if (token == null || token.isEmpty) {
+        throw UnauthorizedException('Token tidak ditemukan. Silakan login kembali.');
+      }
       await ApiService.delete('/api/admin/alat-band/$id', token: token);
       await fetchAlatList();
       return true;
+    } on UnauthorizedException catch (e) {
+      // Auto logout on 401
+      if (_authProvider != null) {
+        await _authProvider!.logout();
+      }
+      _handleError(e);
+      return false;
     } catch (e) {
       _handleError(e);
       return false;
     }
   }
 
-  /// Pilih gambar dari gallery untuk upload
-  Future<void> pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      _selectedImage = File(pickedFile.path);
-      notifyListeners();
-    }
-  }
-
   /// Clear error message
   void clearError() {
     _error = null;
-    notifyListeners();
-  }
-
-  /// Clear gambar yang dipilih
-  void clearSelectedImage() {
-    _selectedImage = null;
     notifyListeners();
   }
 }
