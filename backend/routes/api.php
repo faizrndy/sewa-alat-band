@@ -17,13 +17,12 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC API
+| PUBLIC API (Bisa diakses tanpa login)
 |--------------------------------------------------------------------------
 */
 
-// Booking Availability (SKD Version - Aman)
+// Booking Availability
 Route::post('/alat-band/check-availability', [TransaksiController::class, 'checkAvailability']);
-// Route Cek Ketersediaan (Website Fix Version - Tambahan)
 Route::get('/alat-check', [AlatBandController::class, 'searchAvailable']);
 
 // ALAT BAND (Katalog Public)
@@ -39,22 +38,22 @@ Route::get('/ping', fn() => response()->json(['message' => 'API aktif!']));
 
 /*
 |--------------------------------------------------------------------------
-| AUTH (REGISTER + OTP + LOGIN) - PENTING: SKD VERSION (SECURE)
+| AUTH (REGISTER + OTP + LOGIN)
 |--------------------------------------------------------------------------
 */
 
-// 1️⃣ Kirim OTP ke email saat register
+// Kirim OTP
 Route::post('/register/send-otp', [AuthController::class, 'sendOtp']);
 
-// REGISTER + OTP + LOGIN (Throttled)
+// Auth Actions
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:5,1'); // Salah login max 5x
+    ->middleware('throttle:5,1'); // Limit login salah max 5x
 
 /*
 |--------------------------------------------------------------------------
-| MIDTRANS
+| MIDTRANS (Callback Pembayaran)
 |--------------------------------------------------------------------------
 */
 Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
@@ -62,33 +61,43 @@ Route::post('/midtrans/create-transaction', [MidtransController::class, 'createT
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES (auth:sanctum)
+| PROTECTED ROUTES (Harus Login)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // === MODULE TRANSAKSI ===
-    Route::post('/transaksi', [TransaksiController::class, 'store']);
+    // ==========================================
+    // 👤 ROUTE CUSTOMER (Login User Biasa)
+    // ==========================================
     
-    // RIWAYAT (Website Fix Update)
+    // Transaksi & Riwayat
+    Route::post('/transaksi', [TransaksiController::class, 'store']);
     Route::get('/buyer/history', [TransaksiController::class, 'history']);
     Route::get('/riwayat/{telepon}', [TransaksiController::class, 'riwayat']);
 
-    // Profile
+    // Profile & Logout
     Route::get('/buyer/profile', [AuthController::class, 'profile']);
     Route::put('/buyer/update', [AuthController::class, 'updateProfile']);
     Route::post('/buyer/logout', [AuthController::class, 'logout']);
 
-    // === MODULE ADMIN ===
-    Route::get('/admin/dashboard', [DashboardController::class, 'index']);
 
-    // Admin Transaksi
-    Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
-    Route::get('/admin/transaksi/{kode}', [AdminTransaksiController::class, 'show']); 
-    Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
+    // ==========================================
+    // 🛡️ ROUTE ADMIN (Double Proteksi: Login + Middleware Admin)
+    // ==========================================
+    Route::middleware('admin')->group(function () {
+        
+        // Dashboard
+        Route::get('/admin/dashboard', [DashboardController::class, 'index']);
 
-    // CRUD Alat Band
-    Route::post('/alat-band', [AlatBandController::class, 'store']);
-    Route::post('/alat-band/{id}', [AlatBandController::class, 'update']);
-    Route::delete('/alat-band/{id}', [AlatBandController::class, 'destroy']);
+        // Kelola Transaksi Admin
+        Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
+        Route::get('/admin/transaksi/{kode}', [AdminTransaksiController::class, 'show']); 
+        Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
+
+        // CRUD Alat Band (Hanya Admin yang boleh tambah/edit/hapus)
+        Route::post('/alat-band', [AlatBandController::class, 'store']);
+        Route::post('/alat-band/{id}', [AlatBandController::class, 'update']);
+        Route::delete('/alat-band/{id}', [AlatBandController::class, 'destroy']);
+    });
+
 });

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log; // Untuk logging error
 
 class AuthController extends Controller
 {
@@ -32,9 +33,10 @@ class AuthController extends Controller
         // Generate OTP
         $otp = rand(100000, 999999);
 
+        // Gunakan try-catch untuk database transaction jika perlu, tapi create biasa sudah cukup
         $user = User::create([
-            'name'           => $request->nama_lengkap,
-            'nama_lengkap'   => $request->nama_lengkap,
+            'name'           => $request->nama_lengkap, // Mapping ke 'name' bawaan Laravel
+            // 'nama_lengkap' => $request->nama_lengkap, // Hapus jika tidak ada kolom ini di DB
             'email'          => $request->email,
             'nomor_telepon'  => $request->nomor_telepon,
             'password'       => Hash::make($request->password),
@@ -44,10 +46,18 @@ class AuthController extends Controller
             'is_verified'    => false,
         ]);
 
-        // Kirim OTP ke email
-        Mail::raw("Kode OTP kamu adalah: $otp (berlaku 5 menit)", function ($msg) use ($user) {
-            $msg->to($user->email)->subject("Kode OTP Verifikasi Akun");
-        });
+        // Kirim OTP ke email dengan Error Handling
+        try {
+            Mail::raw("Kode OTP kamu adalah: $otp (berlaku 5 menit)", function ($msg) use ($user) {
+                $msg->to($user->email)->subject("Kode OTP Verifikasi Akun");
+            });
+        } catch (\Exception $e) {
+            Log::error("Gagal kirim email OTP: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Registrasi berhasil, tapi gagal mengirim OTP. Silakan hubungi admin atau coba login untuk resend.',
+                'email'   => $user->email, // Tetap return email agar frontend bisa handle
+            ], 201); // Tetap 201 karena user terbuat
+        }
 
         return response()->json([
             'message' => 'Registrasi berhasil! OTP telah dikirim ke email.',
@@ -75,12 +85,13 @@ class AuthController extends Controller
         // Convert ke integer agar perbandingan sama
         $incomingOtp = (int) $request->otp;
 
-        if ((int)$user->otp !== $incomingOtp) {
+        // Pastikan user->otp tidak null sebelum dicast
+        if (!$user->otp || (int)$user->otp !== $incomingOtp) {
             return response()->json(['message' => 'OTP salah'], 422);
         }
 
         if (Carbon::now()->greaterThan($user->otp_expires_at)) {
-            return response()->json(['message' => 'OTP kadaluarsa'], 422);
+            return response()->json(['message' => 'OTP kadaluarsa. Silakan minta kirim ulang.'], 422);
         }
 
         $user->update([
@@ -89,63 +100,71 @@ class AuthController extends Controller
             'otp_expires_at' => null
         ]);
 
-        return response()->json(['message' => 'Verifikasi OTP berhasil!']);
+        return response()->json(['message' => 'Verifikasi OTP berhasil! Silakan login.']);
     }
-
-
 
     // ===========================
     // LOGIN (PAKAI CAPTCHA)
     // ===========================
     public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-        'g-recaptcha-response' => 'required',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            // 'g-recaptcha-response' => 'required', // Boleh di-uncomment jika frontend sudah siap
+        ]);
 
-    $response = Http::asForm()->post(
-        'https://www.google.com/recaptcha/api/siteverify',
-        [
-            'secret' => config('services.recaptcha.secret'),
-            'response' => $request->input('g-recaptcha-response'),
-            'remoteip' => $request->ip(),
-        ]
-    );
+        // ======================================
+        // LOGIC RECAPTCHA (Opsional: Matikan saat local dev jika sering gagal)
+        // ======================================
+        if ($request->has('g-recaptcha-response') && config('services.recaptcha.secret')) {
+            $response = Http::asForm()->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret' => config('services.recaptcha.secret'),
+                    'response' => $request->input('g-recaptcha-response'),
+                    'remoteip' => $request->ip(),
+                ]
+            );
 
-    if (!($response['success'] ?? false)) {
-        return response()->json(['message' => 'Captcha tidak valid!'], 422);
-    }
+            if (!($response['success'] ?? false)) {
+                return response()->json(['message' => 'Captcha tidak valid!'], 422);
+            }
+        }
+        // ======================================
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if (! $user || ! Hash::check($request->password, $user->password)) {
-        return response()->json(['message' => 'Email atau password salah'], 401);
-    }
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Email atau password salah'], 401);
+        }
 
-    if (! $user->is_verified) {
+        if (! $user->is_verified) {
+            return response()->json([
+                'message' => 'Akun belum diverifikasi. Silakan cek email untuk OTP.',
+                'require_otp' => true // Flag untuk frontend redirect ke halaman OTP
+            ], 403);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
-            'message' => 'Akun belum diverifikasi. Silakan cek email untuk OTP.'
-        ], 403);
+            'message' => 'Login berhasil!',
+            'token' => $token,
+            'user' => $user,
+        ]);
     }
-
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'message' => 'Login berhasil!',
-        'token' => $token,
-        'user' => $user,
-    ]);
-}
-
 
     // ===========================
     // LOGOUT
     // ===========================
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logout berhasil']);
+        if ($request->user()) {
+            $request->user()->currentAccessToken()->delete();
+            return response()->json(['message' => 'Logout berhasil']);
+        }
+        
+        return response()->json(['message' => 'User tidak ditemukan atau sudah logout'], 401);
     }
 }

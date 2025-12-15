@@ -17,7 +17,6 @@ const routes = [
     component: () => import('@/views/VerifyOtp.vue')
   },
 
-
   {
     path: '/katalog',
     name: 'Katalog',
@@ -118,26 +117,32 @@ router.beforeEach((to, from, next) => {
   const buyerToken = localStorage.getItem("buyer_token");
   const adminToken = localStorage.getItem("admin_token");
 
-  // 1️⃣ ADMIN PROTECTED ROUTES
+  // 🔥 1️⃣ PROTEKSI KHUSUS: Customer Dilarang Masuk Admin
+  // Jika user punya token customer DAN mencoba akses URL yang dimulai dengan /admin
+  if (to.path.startsWith('/admin') && buyerToken) {
+    return next('/'); // Paksa pulang ke Home
+  }
+
+  // 2️⃣ ADMIN PROTECTED ROUTES
   if (to.matched.some(r => r.meta.requiresAdmin)) {
     if (!adminToken) {
       return next({ name: 'AdminLogin' });
     }
   }
 
-  // 2️⃣ CUSTOMER PROTECTED ROUTES
+  // 3️⃣ CUSTOMER PROTECTED ROUTES
   if (to.matched.some(r => r.meta.requiresAuth)) {
     if (!buyerToken) {
       return next({ name: 'Login' });
     }
   }
 
-  // 3️⃣ ADMIN LOGIN -> kalau sudah login, langsung masuk dashboard
+  // 4️⃣ ADMIN LOGIN -> kalau sudah login admin, langsung masuk dashboard
   if (to.name === 'AdminLogin' && adminToken) {
     return next({ name: 'AdminDashboard' });
   }
 
-  // 4️⃣ BUYER LOGIN -> kalau sudah login, jauhkan dari login/register
+  // 5️⃣ BUYER LOGIN -> kalau sudah login customer, jauhkan dari login/register
   if ((to.name === 'Login' || to.name === 'Register') && buyerToken) {
     return next({ name: 'Home' });
   }

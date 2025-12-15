@@ -35,7 +35,7 @@
         </div>
 
         <div class="flex justify-center my-4">
-           <div id="recaptcha-box"></div>
+           <div id="recaptcha-box-customer"></div>
         </div>
 
         <button 
@@ -59,8 +59,8 @@ import Swal from 'sweetalert2'
 const router = useRouter()
 const loading = ref(false)
 
-// Kunci ReCaptcha (SKD)
-const siteKey = '6LfscxcsAAAAAO07vUyB0-C5RguuVUA9IV-_nn4x'
+// 🔥 KEY TESTING GOOGLE (Cocok dengan .env Backend)
+const siteKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
 
 const form = ref({
   email: '',
@@ -78,21 +78,24 @@ onMounted(() => {
 
 function renderCaptcha() {
   try {
-    widgetId = grecaptcha.render('recaptcha-box', {
-      sitekey: siteKey,
-      callback: (token) => {
-        form.value['g-recaptcha-response'] = token
-      },
-      'expired-callback': () => {
-        form.value['g-recaptcha-response'] = ''
-      }
-    })
+    // Gunakan ID unik 'recaptcha-box-customer' agar tidak bentrok
+    if(document.getElementById('recaptcha-box-customer')) {
+        widgetId = grecaptcha.render('recaptcha-box-customer', {
+          sitekey: siteKey,
+          callback: (token) => {
+            form.value['g-recaptcha-response'] = token
+          },
+          'expired-callback': () => {
+            form.value['g-recaptcha-response'] = ''
+          }
+        })
+    }
   } catch (e) {
     console.error("Captcha error:", e)
   }
 }
 
-// LOGIN LOGIC (SKD Version - Security Aware)
+// LOGIN LOGIC
 const login = async () => {
   // 1. Validasi Captcha
   if (!form.value['g-recaptcha-response']) {
@@ -135,6 +138,7 @@ const login = async () => {
     }).then(() => {
       // Redirect Logic
       if(user && user.role === 'admin') {
+           // Admin nyasar ke login customer, lempar ke dashboard admin
            window.location.href = '/admin/dashboard';
       } else {
            router.push('/')
@@ -142,7 +146,6 @@ const login = async () => {
     })
 
   } catch (err) {
-    // ✅ RATE LIMIT HANDLING (Fitur Temanmu)
     if (err.response?.status === 429) {
       Swal.fire({
         icon: 'warning',

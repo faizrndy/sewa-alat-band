@@ -22,10 +22,14 @@
             <input v-model="form.password" type="password" class="input-dark" placeholder="••••••••" required />
           </div>
 
+          <div class="flex justify-center my-4">
+             <div id="recaptcha-box-admin"></div>
+          </div>
+
           <button
             type="submit"
             :disabled="loading"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-indigo-900/20 transition"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-indigo-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading ? 'Memproses...' : 'Masuk Dashboard' }}
           </button>
@@ -35,30 +39,71 @@
   </template>
 
   <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import axios from 'axios';
   import { useRouter } from 'vue-router';
   import Swal from 'sweetalert2';
 
   const router = useRouter();
-  const form = ref({ email: '', password: '' });
   const loading = ref(false);
 
+  // 🔥 KEY TESTING GOOGLE (Sama dengan Customer & .env)
+  const siteKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+
+  const form = ref({ 
+      email: '', 
+      password: '',
+      'g-recaptcha-response': '' // Field Token Captcha
+  });
+
+  let widgetId = null;
+
+  // Render reCAPTCHA
+  onMounted(() => {
+    if (window.grecaptcha) renderCaptcha();
+    else window.vueRecaptchaInit = renderCaptcha;
+  });
+
+  function renderCaptcha() {
+    try {
+        if(document.getElementById('recaptcha-box-admin')) {
+            widgetId = grecaptcha.render('recaptcha-box-admin', {
+                sitekey: siteKey,
+                callback: (token) => {
+                    form.value['g-recaptcha-response'] = token;
+                },
+                'expired-callback': () => {
+                    form.value['g-recaptcha-response'] = '';
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Captcha Admin Error:", e);
+    }
+  }
+
   const handleLogin = async () => {
+    // 1. Validasi Captcha
+    if (!form.value['g-recaptcha-response']) {
+        Swal.fire({ icon: 'warning', title: 'Captcha Kosong', text: 'Centang dulu bro!', background: '#111', color: '#fff' });
+        return;
+    }
+
     loading.value = true;
     try {
-      const res = await axios.post('/api/login', form.value);
+      // Kirim Data Login + Captcha
+      const res = await axios.post('http://127.0.0.1:8000/api/login', form.value);
 
       // Pastikan user admin
       if (res.data.user.role !== 'admin') {
         throw new Error('Anda bukan Admin! Akses ditolak.');
       }
 
-      // Hapus token buyer jika ada (biar tidak bentrok)
+      // Bersihkan sesi buyer jika ada
       localStorage.removeItem('buyer_token');
       localStorage.removeItem('user_data');
 
-      // Simpan token admin
+      // Simpan sesi admin
       localStorage.setItem('admin_token', res.data.token);
       localStorage.setItem('user_role', 'admin');
 
@@ -82,6 +127,11 @@
         background: '#111',
         color: '#fff'
       });
+      
+      // Reset Captcha jika gagal
+      if(widgetId !== null) grecaptcha.reset(widgetId);
+      form.value['g-recaptcha-response'] = '';
+      
     } finally {
       loading.value = false;
     }
