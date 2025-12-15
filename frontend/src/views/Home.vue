@@ -138,7 +138,7 @@
             <img src="/images/logo1.png" class="w-8 h-8 opacity-80 grayscale hover:grayscale-0 transition" />
             <span class="text-xl font-black text-white italic">KRATAK FC</span>
           </div>
-          <p class="mb-6">Rental alat musik & sound system terpercaya di Jakarta.</p>
+          <p class="mb-6">Rental alat musik & sound system terpercaya di Surakarta.</p>
         </div>
         <div>
           <h4 class="text-white font-bold uppercase tracking-widest mb-6 border-b border-gray-800 pb-2 inline-block">Menu</h4>

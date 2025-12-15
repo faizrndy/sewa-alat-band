@@ -1,4 +1,6 @@
 <template>
+  <Navbar class="fixed top-0 left-0 w-full z-50" />
+
   <div class="min-h-screen bg-[#0a0a0a] text-white py-10 px-6 font-sans pt-28">
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -18,22 +20,29 @@
           </h2>
 
           <div v-if="itemsKeranjang.length === 0" class="text-center text-gray-500 py-4">
-             Wah, data keranjang tidak terbaca. Coba kembali ke menu Keranjang.
+             Keranjang kosong. <router-link to="/katalog" class="text-rose-500 underline">Cari alat dulu!</router-link>
+          </div>
+
+          <div v-if="tglMulai && tglSelesai" class="mb-4 bg-rose-900/10 border border-rose-900/50 p-4 rounded-xl flex justify-between items-center">
+             <div>
+                <span class="text-xs text-rose-400 font-bold uppercase tracking-widest block mb-1">Tanggal Sewa</span>
+                <span class="text-white font-bold text-lg">{{ tglMulai }} <span class="text-gray-500 text-sm">s/d</span> {{ tglSelesai }}</span>
+             </div>
+             <div class="bg-black/40 px-4 py-2 rounded-lg border border-rose-500/30">
+                <span class="text-rose-500 font-black text-xl">{{ lamaSewa }} Hari</span>
+             </div>
           </div>
 
           <div class="space-y-4">
-            <div v-for="item in itemsKeranjang" :key="item.id" class="flex gap-4 bg-black/40 p-4 rounded-2xl border border-gray-800/50">
+            <div v-for="item in itemsKeranjang" :key="item.id" class="flex gap-4 bg-black/40 p-4 rounded-2xl border border-gray-800/50 hover:border-rose-500/30 transition">
               <div class="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-white rounded-xl overflow-hidden">
                 <img :src="getImgUrl(item.gambar)" class="w-full h-full object-contain p-1" @error="$event.target.src = 'https://placehold.co/150x150/1a1a1a/FFF?text=No+Image'"/>
               </div>
               <div class="flex-1 flex flex-col justify-center">
                 <h3 class="font-black text-white text-base md:text-lg uppercase italic leading-tight">{{ item.nama_alat }}</h3>
-                <div class="text-xs text-gray-500 mt-1 font-mono">
-                  {{ item.tanggalMulai }} <span class="text-rose-500">➜</span> {{ item.tanggalSelesai }}
-                </div>
                 <div class="mt-2 flex items-center justify-between">
-                  <p class="text-xs text-gray-400">Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.jumlah }} Unit</p>
-                  <p class="font-bold text-white">Total: Rp {{ (hitungHari(item) * item.harga_sewa * item.jumlah).toLocaleString() }}</p>
+                  <p class="text-xs text-gray-400">Rp {{ Number(item.harga_sewa).toLocaleString() }} x {{ item.qty || item.jumlah || 1 }} Unit</p>
+                  <p class="font-bold text-white text-sm">Total: <span class="text-rose-500">Rp {{ (item.harga_sewa * (item.qty || item.jumlah || 1) * lamaSewa).toLocaleString() }}</span></p>
                 </div>
               </div>
             </div>
@@ -48,32 +57,22 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div>
                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nama Lengkap</label>
-               <input
-                 v-model="nama"
-                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-600"
-                 type="text"
-                 placeholder="Nama Panggung / Asli"
-               />
+               <input v-model="nama" class="input-dark" type="text" placeholder="Nama Panggung / Asli" />
              </div>
              <div>
                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">WhatsApp</label>
-               <input
-                 v-model="telepon"
-                 class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-600"
-                 type="text"
-                 placeholder="0812..."
-               />
+               <input v-model="telepon" class="input-dark" type="number" placeholder="0812..." />
              </div>
              <div class="md:col-span-2">
                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Identitas (KTP/SIM)</label>
                <div class="relative border-2 border-dashed border-gray-700 bg-black/30 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-800 hover:border-rose-600 transition group">
                   <input type="file" @change="onIdentitas" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"/>
                   <div v-if="!fileIdentitas" class="flex flex-col items-center text-gray-500 group-hover:text-rose-500 transition">
-                    <i class="fas fa-id-card text-3xl mb-2"></i>
+                    <span class="text-3xl mb-2">🪪</span>
                     <p class="text-sm font-bold">Klik untuk upload KTP/SIM</p>
                   </div>
                   <div v-else class="flex items-center justify-center gap-3 text-green-500">
-                    <i class="fas fa-check-circle text-2xl"></i>
+                    <span class="text-2xl">✓</span>
                     <p class="text-sm font-bold text-white">{{ fileIdentitas.name }}</p>
                   </div>
                </div>
@@ -84,20 +83,20 @@
         <div class="bg-[#151515] p-6 md:p-8 rounded-3xl border border-gray-800">
           <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-wider">
             <span class="bg-rose-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black">3</span>
-            Pengiriman
+            Metode Ambil
           </h2>
 
           <div class="flex gap-4 mb-6">
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="ambil" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
               <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
-                <i class="fas fa-store text-2xl"></i> <span class="font-bold text-sm">Ambil Sendiri</span>
+                <span class="text-2xl">🏪</span> <span class="font-bold text-sm">Ambil Sendiri</span>
               </div>
             </label>
             <label class="flex-1 cursor-pointer group">
               <input type="radio" value="antar" v-model="metodePengiriman" @change="updateTarif" class="hidden peer">
               <div class="border border-gray-700 bg-black p-4 rounded-xl text-center peer-checked:border-rose-600 peer-checked:bg-rose-600/10 peer-checked:text-rose-500 transition group-hover:border-gray-500 h-full flex flex-col justify-center items-center gap-2">
-                <i class="fas fa-truck-fast text-2xl"></i> <span class="font-bold text-sm">Antar Kurir</span>
+                <span class="text-2xl">🚚</span> <span class="font-bold text-sm">Antar Kurir</span>
               </div>
             </label>
           </div>
@@ -105,7 +104,7 @@
           <div v-show="metodePengiriman === 'antar'" class="space-y-4">
             <div id="map" class="w-full h-72 rounded-xl border border-gray-700 z-0"></div>
 
-            <p class="text-xs text-gray-500 text-center italic">*Klik peta untuk menentukan lokasi</p>
+            <p class="text-xs text-gray-500 text-center italic">*Klik peta untuk menentukan lokasi pengantaran</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
@@ -113,14 +112,19 @@
                   <div class="w-full bg-black border border-gray-700 text-gray-400 px-4 py-3 rounded-xl">{{ jarak.toFixed(1) }} km</div>
                </div>
                <div>
-                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ongkir</label>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ongkir (Estimasi)</label>
                   <div class="w-full bg-black border border-gray-700 text-rose-500 font-bold px-4 py-3 rounded-xl">Rp {{ tarifAntar.toLocaleString() }}</div>
                </div>
             </div>
 
-            <textarea v-model="alamat" class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 outline-none" rows="2" readonly placeholder="Alamat otomatis..."></textarea>
-            <textarea v-model="deskripsiLokasi" class="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 outline-none" rows="2" placeholder="Detail patokan..."></textarea>
+            <textarea v-model="alamat" class="input-dark" rows="2" readonly placeholder="Alamat otomatis..."></textarea>
+            <textarea v-model="deskripsiLokasi" class="input-dark" rows="2" placeholder="Detail patokan (Warna pagar, dekat warung, dll)..."></textarea>
           </div>
+          
+          <div v-if="metodePengiriman === 'ambil'" class="text-center p-4 bg-green-900/20 border border-green-900 rounded-xl">
+             <p class="text-green-500 font-bold text-sm">✅ Kamu memilih Ambil Sendiri. Silakan datang langsung ke Studio.</p>
+          </div>
+
         </div>
       </div>
 
@@ -132,7 +136,7 @@
 
           <div class="space-y-3 mb-6">
              <div class="flex justify-between text-gray-400 text-sm">
-               <span>Subtotal</span>
+               <span>Subtotal ({{ lamaSewa }} Hari)</span>
                <span class="text-white font-bold">Rp {{ totalSewa.toLocaleString() }}</span>
              </div>
              <div class="flex justify-between text-gray-400 text-sm" v-if="metodePengiriman === 'antar'">
@@ -153,7 +157,6 @@
           >
              <span class="relative z-10 group-hover:scale-105 transition">{{ loading ? "Memproses..." : "BAYAR SEKARANG" }}</span>
           </button>
-
           <p class="text-[10px] text-center text-gray-600 mt-4 uppercase tracking-widest">Secured by Midtrans</p>
         </div>
       </div>
@@ -168,178 +171,71 @@ import axios from "axios";
 import L from "leaflet";
 import Swal from "sweetalert2";
 import { useRouter } from "vue-router";
+import Navbar from "@/components/Navbar.vue";
 
 const router = useRouter();
 
-// =======================
-// STATE FORM
-// =======================
+// STATE FORMULIR
 const nama = ref("");
 const telepon = ref("");
 const deskripsiLokasi = ref("");
 const alamat = ref("");
 const fileIdentitas = ref(null);
 
-// =======================
+// STATE TANGGAL
+const tglMulai = ref("");
+const tglSelesai = ref("");
+const lamaSewa = ref(0);
+
 // STATE PETA
-// =======================
 const lat = ref(null);
 const lon = ref(null);
 const jarak = ref(0);
 let map;
 let marker;
+const tokoLat = -7.568; 
+const tokoLon = 110.829; 
 
-// Lokasi toko
-const tokoLat = -7.568;
-const tokoLon = 110.829;
+// DATA KERANJANG
+const itemsKeranjang = ref(JSON.parse(localStorage.getItem("keranjang") || "[]"));
 
-// =======================
-// CART KEY
-// =======================
-const getCartKey = () => {
-    const token = localStorage.getItem("buyer_token");
-    const userDataStr = localStorage.getItem("user_data");
-
-    if (token && userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        if (userData.id) return `cart_${userData.id}`;
-    }
-    return "cart_guest";
-};
-
-const itemsKeranjang = ref(JSON.parse(localStorage.getItem(getCartKey()) || "[]"));
-
-// =======================
-// AUTO FILL PROFILE
-// =======================
+// ============================================
+// 1. ISI PROFIL OTOMATIS (AUTO FILL)
+// ============================================
 const getProfile = async () => {
-  try {
-    const token = localStorage.getItem("buyer_token");
-    if (!token) return;
+  // Ambil Token (Coba kedua kemungkinan nama key)
+  const token = localStorage.getItem("token") || localStorage.getItem("buyer_token");
+  
+  if (!token) {
+      console.log("Guest Mode - Tidak ada Token");
+      return; 
+  }
 
-    const res = await axios.get("/api/buyer/profile", {
+  try {
+    const res = await axios.get("http://127.0.0.1:8000/api/buyer/profile", {
       headers: { Authorization: `Bearer ${token}` }
     });
-
-    let user = res.data.data || res.data.user || res.data;
-
-    nama.value = user.nama_lengkap || user.name || "";
-    telepon.value = user.nomor_telepon || "";
+    
+    // Ambil data user dari respons
+    const u = res.data.data || res.data.user || res.data;
+    if (u) {
+        nama.value = u.nama_lengkap || u.name || u.nama || nama.value;
+        telepon.value = u.nomor_telepon || u.telepon || u.phone || telepon.value;
+    }
   } catch (e) {
-    console.error("Gagal ambil profile:", e);
+    // JIKA ERROR 401 (Unauthorized), Hapus Token Rusak biar gak error terus
+    if (e.response && e.response.status === 401) {
+        console.warn("Token expired. Membersihkan storage.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("buyer_token");
+    }
   }
 };
 
 const onIdentitas = e => fileIdentitas.value = e.target.files[0];
+const getImgUrl = (path) => path?.startsWith("http") ? path : `http://127.0.0.1:8000/${path}`;
 
-const getImgUrl = (path) => {
-  if (!path) return "https://placehold.co/400x400/1a1a1a/FFF?text=No+Image";
-  if (path.startsWith("http")) return path;
-  return `http://127.0.0.1:8000/${path}`;
-};
-
-// =======================
-// HITUNG HARI SEWA
-// =======================
-const hitungHari = (item) => {
-  if (!item.tanggalMulai || !item.tanggalSelesai) return 0;
-  const start = new Date(item.tanggalMulai);
-  const end = new Date(item.tanggalSelesai);
-  const diff = (end - start) / (1000 * 60 * 60 * 24);
-  return diff > 0 ? diff : 0;
-};
-
-// =======================
-// HITUNG JARAK (Haversine)
-// =======================
-function hitungJarak(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
-
-  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// =======================
-// KLIK PETA → PILIH LOKASI
-// =======================
-async function pilihLokasi(e) {
-  const klikLat = e.latlng.lat;
-  const klikLon = e.latlng.lng;
-
-  const jarakKlik = hitungJarak(tokoLat, tokoLon, klikLat, klikLon);
-
-  // 🚫 Jika lebih dari 25 km → ditolak
-  if (jarakKlik > 25) {
-    Swal.fire({
-      icon: "warning",
-      title: "Terlalu Jauh",
-      text: "Maksimal pengantaran hanya 25 km dari toko.",
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48"
-    });
-    return;
-  }
-
-  // ✔ Set lokasi
-  lat.value = klikLat;
-  lon.value = klikLon;
-  jarak.value = jarakKlik;
-
-  if (marker) marker.setLatLng(e.latlng);
-  else marker = L.marker(e.latlng).addTo(map);
-
-  updateTarif();
-
-  // Auto alamat
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat.value}&lon=${lon.value}&format=json`
-    );
-    const data = await res.json();
-    alamat.value = data.display_name || "Alamat tidak ditemukan";
-  } catch (err) {
-    alamat.value = "Alamat tidak ditemukan";
-  }
-}
-
-// =======================
-// INISIALISASI PETA
-// =======================
-onMounted(() => {
-  getProfile();
-
-  if (document.getElementById("map")) {
-    map = L.map("map").setView([tokoLat, tokoLon], 13);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
-      .addTo(map);
-
-    // Marker toko
-    marker = L.marker([tokoLat, tokoLon]).addTo(map);
-
-    // 🔥 Tambahkan radius 25 KM
-    L.circle([tokoLat, tokoLon], {
-      radius: 25000,
-      color: "#e11d48",
-      fillColor: "#e11d48",
-      fillOpacity: 0.1,
-    }).addTo(map);
-
-    map.on("click", pilihLokasi);
-  }
-});
-
-// =======================
-// TARIF ANTAR
-// =======================
+// HITUNG ONGKIR OTOMATIS
 const metodePengiriman = ref("ambil");
 const tarifAntar = ref(0);
 
@@ -348,183 +244,189 @@ function updateTarif() {
     tarifAntar.value = 0;
     return;
   }
-
   const km = jarak.value;
-
-  // GRATIS 0–10 km
-  if (km <= 10) {
-    tarifAntar.value = 0;
-    return;
-  }
-
-  // Setelah 10 km → 5 km = Rp 10.000
-  const lebih = km - 10;
-  const blok = Math.ceil(lebih / 5);
-  tarifAntar.value = blok * 10000;
+  const ratePerKm = 2500;
+  const minOngkir = 10000;
+  const hitung = Math.ceil(km * ratePerKm);
+  tarifAntar.value = hitung < minOngkir ? minOngkir : hitung;
 }
 
-// =======================
-// TOTAL
-// =======================
-const totalSewa = computed(() =>
-  itemsKeranjang.value.reduce((total, item) => {
-    return total + hitungHari(item) * item.harga_sewa * item.jumlah;
-  }, 0)
-);
+// LOGIC TANGGAL
+const hitungHariGlobal = () => {
+  tglMulai.value = localStorage.getItem('sewa_tgl_mulai');
+  tglSelesai.value = localStorage.getItem('sewa_tgl_selesai');
 
-const totalBayar = computed(() =>
-  totalSewa.value +
-  (metodePengiriman.value === "antar" ? tarifAntar.value : 0)
-);
+  if (tglMulai.value && tglSelesai.value) {
+    const start = new Date(tglMulai.value);
+    const end = new Date(tglSelesai.value);
+    const diff = (end - start) / (1000 * 60 * 60 * 24);
+    lamaSewa.value = diff > 0 ? diff : 1; 
+  } else {
+    lamaSewa.value = 1; 
+  }
+};
 
-// =======================
-// KIRIM PEMBAYARAN
-// =======================
-const loading = ref(false);
+onMounted(() => {
+  getProfile();
+  hitungHariGlobal();
 
-const kirimPembayaran = async () => {
-  if (!itemsKeranjang.value.length)
-    return Swal.fire({
-      icon: "warning",
-      title: "Keranjang Kosong",
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48",
-    });
-
-  if (!nama.value || !telepon.value)
-    return Swal.fire({
-      icon: "warning",
-      title: "Data Kurang",
-      text: "Isi nama dan WhatsApp.",
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48",
-    });
-
-  if (!fileIdentitas.value)
-    return Swal.fire({
-      icon: "warning",
-      title: "Identitas Wajib",
-      text: "Upload foto KTP/SIM asli.",
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48",
-    });
-
-  if (metodePengiriman.value === "antar" && !lat.value)
-    return Swal.fire({
-      icon: "warning",
-      title: "Lokasi Belum Ada",
-      text: "Klik peta dulu.",
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48",
-    });
-
-  // cek token
-  const token = localStorage.getItem("buyer_token");
-  if (!token) {
-    Swal.fire({
-      icon: "error",
-      title: "Sesi Habis",
-      text: "Silakan login ulang.",
-      background: "#151515",
-      color: "#fff",
-    });
-    router.push("/login");
-    return;
+  // Redirect kalau tanggal belum dipilih
+  if(!tglMulai.value || !tglSelesai.value) {
+     Swal.fire({ icon: 'warning', title: 'Tanggal Kosong', text: 'Pilih tanggal dulu di Katalog', background: '#151515', color: '#fff' })
+       .then(() => router.push('/katalog'));
   }
 
-  loading.value = true;
+  // Init Peta
+  setTimeout(() => {
+      if (document.getElementById("map")) {
+        map = L.map("map").setView([tokoLat, tokoLon], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+        L.marker([tokoLat, tokoLon]).addTo(map).bindPopup("Toko Kami");
+        L.circle([tokoLat, tokoLon], { radius: 25000, color: "#e11d48", fillColor: "#e11d48", fillOpacity: 0.1 }).addTo(map);
+        map.on("click", pilihLokasi);
+      }
+  }, 500);
+});
 
+// Helper Hitung Jarak
+function hitungJarak(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function pilihLokasi(e) {
+  const klikLat = e.latlng.lat;
+  const klikLon = e.latlng.lng;
+  const jarakKlik = hitungJarak(tokoLat, tokoLon, klikLat, klikLon);
+
+  if (jarakKlik > 25) {
+    Swal.fire({ icon: "warning", title: "Kejauhan Bos!", text: "Maksimal 25km ya.", background: "#151515", color: "#fff" });
+    return;
+  }
+  lat.value = klikLat; lon.value = klikLon; jarak.value = jarakKlik;
+  if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
+  updateTarif();
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.value}&lon=${lon.value}&format=json`);
+    const data = await res.json();
+    alamat.value = data.display_name || "Alamat terpilih";
+  } catch (err) { alamat.value = "Alamat terpilih"; }
+}
+
+const totalSewa = computed(() => itemsKeranjang.value.reduce((total, item) => total + (item.harga_sewa * (item.qty || item.jumlah || 1) * lamaSewa.value), 0));
+const totalBayar = computed(() => totalSewa.value + tarifAntar.value);
+const loading = ref(false);
+
+// 🔥🔥🔥 SOLUSI FINAL PEMBAYARAN + HAPUS KERANJANG
+const kirimPembayaran = async () => {
+  const token = localStorage.getItem("token") || localStorage.getItem("buyer_token");
+
+  // Validasi Login
+  if (!token) {
+    return Swal.fire({ 
+        icon: "error", 
+        title: "Kamu Belum Login", 
+        text: "Silakan login ulang untuk melanjutkan pembayaran.", 
+        background: "#151515", 
+        color: "#fff",
+        confirmButtonColor: "#e11d48"
+    }).then(() => router.push('/login'));
+  }
+
+  // Validasi Data Diri
+  if (!nama.value || !telepon.value || !fileIdentitas.value) {
+    return Swal.fire({ icon: "warning", title: "Data Kurang", text: "Lengkapi Nama, WA, dan Upload KTP.", background: "#151515", color: "#fff" });
+  }
+
+  // Validasi Lokasi (Jika Antar)
+  if (metodePengiriman.value === "antar" && !lat.value) {
+    return Swal.fire({ icon: "warning", title: "Pilih Lokasi", text: "Klik peta untuk lokasi pengantaran.", background: "#151515", color: "#fff" });
+  }
+  
+  loading.value = true;
   try {
     const form = new FormData();
     form.append("nama", nama.value);
     form.append("telepon", telepon.value);
-    form.append("alamat", alamat.value || "-");
+    
+    // Logic Alamat: Jika Ambil Sendiri -> Kirim Strip (-)
+    const alamatFinal = metodePengiriman.value === 'ambil' ? '-' : (alamat.value || '-');
+    form.append("alamat", alamatFinal);
+    
     form.append("deskripsi_lokasi", deskripsiLokasi.value || "-");
-    form.append("lat", lat.value || 0);
-    form.append("lon", lon.value || 0);
+    form.append("lat", lat.value || 0); form.append("lon", lon.value || 0);
     form.append("jarak_km", jarak.value);
     form.append("metode_pengiriman", metodePengiriman.value);
     form.append("tarif_antar", tarifAntar.value);
     form.append("total_sewa", totalSewa.value);
     form.append("total_bayar", totalBayar.value);
     form.append("identitas", fileIdentitas.value);
-    form.append("items", JSON.stringify(itemsKeranjang.value));
+    form.append("tgl_mulai", tglMulai.value);
+    form.append("tgl_selesai", tglSelesai.value);
+    
+    const itemsToSend = itemsKeranjang.value.map(item => ({
+        id: item.id, qty: item.qty || item.jumlah || 1, harga_sewa: item.harga_sewa, nama_alat: item.nama_alat
+    }));
+    form.append("items", JSON.stringify(itemsToSend));
 
-    const res = await axios.post("/api/transaksi", form, {
-      headers: {
+    const headers = { 
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+        "Authorization": `Bearer ${token}` 
+    };
 
-    const snapToken = res.data.snap_token;
-
-    if (window.snap && snapToken) {
-      window.snap.pay(snapToken, {
-        onSuccess: () => {
-          const key = getCartKey();
-          localStorage.removeItem(key);
-          window.dispatchEvent(new Event("cart-updated"));
-          Swal.fire({
-            icon: "success",
-            title: "Pembayaran Berhasil!",
-            background: "#151515",
-            color: "#fff",
-          }).then(() => {
-            window.location.href = `/riwayat?telepon=${telepon.value}`;
-          });
-        },
-        onPending: () => {
-          const key = getCartKey();
-          localStorage.removeItem(key);
-          window.dispatchEvent(new Event("cart-updated"));
-          Swal.fire({
-            icon: "info",
-            title: "Menunggu Pembayaran",
-            text: "Selesaikan pembayaran lo ya.",
-            background: "#151515",
-            color: "#fff",
-          }).then(() => {
-            window.location.href = `/riwayat?telepon=${telepon.value}`;
-          });
-        },
-        onError: () =>
-          Swal.fire({
-            icon: "error",
-            title: "Pembayaran Gagal",
-            background: "#151515",
-            color: "#fff",
-          }),
-        onClose: () =>
-          Swal.fire({
-            icon: "question",
-            title: "Batal Bayar?",
-            text: "Lo bisa bayar nanti di Riwayat.",
-            background: "#151515",
-            color: "#fff",
-          }),
-      });
-    } else {
-      const key = getCartKey();
-      localStorage.removeItem(key);
-      window.dispatchEvent(new Event("cart-updated"));
-      window.location.href = `/riwayat?telepon=${telepon.value}`;
+    const res = await axios.post("http://127.0.0.1:8000/api/transaksi", form, { headers });
+    
+    // Logic Midtrans
+    if (window.snap && res.data.snap_token) {
+       window.snap.pay(res.data.snap_token, {
+         // ✅ HAPUS KERANJANG DI SINI
+         onSuccess: () => {
+             bersihkanKeranjang();
+             Swal.fire({icon: 'success', title: 'Berhasil!', text: 'Terima kasih sudah menyewa.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
+         },
+         onPending: () => { 
+             bersihkanKeranjang(); // Hapus karena data sudah masuk DB (status pending)
+             Swal.fire({icon: 'info', title: 'Menunggu Pembayaran', text: 'Cek halaman riwayat untuk bayar.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
+         },
+         onClose: () => {
+             bersihkanKeranjang(); // Hapus keranjang agar tidak double order
+             Swal.fire({icon: 'warning', title: 'Belum Bayar?', text: 'Transaksi sudah dibuat. Cek menu Riwayat.', background: '#151515', color: '#fff'})
+                .then(() => window.location.href = `/riwayat?telepon=${telepon.value}`);
+         },
+         onError: () => Swal.fire({icon: 'error', title: 'Gagal', background: '#151515', color: '#fff'})
+       });
     }
   } catch (err) {
-    Swal.fire({
-      icon: "error",
-      title: "Server Error",
-      text: err.response?.data?.message || err.message,
-      background: "#151515",
-      color: "#fff",
-      confirmButtonColor: "#e11d48",
-    });
-  }
+    if (err.response && (err.response.status === 401 || err.response.status === 419)) {
+        Swal.fire({ icon: "error", title: "Sesi Habis", text: "Login ulang yuk!", background: "#151515", color: "#fff" })
+            .then(() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("buyer_token");
+                router.push('/login');
+            });
+    } else {
+        Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || "Gagal memproses", background: "#151515", color: "#fff" });
+    }
+  } finally { loading.value = false; }
+};
 
-  loading.value = false;
+// 🔥 FUNGSI BERSIHKAN KERANJANG
+const bersihkanKeranjang = () => {
+    localStorage.removeItem("keranjang"); 
+    localStorage.removeItem("sewa_tgl_mulai"); 
+    localStorage.removeItem("sewa_tgl_selesai");
+    // Trigger update Navbar
+    window.dispatchEvent(new Event('cart-updated')); 
 };
 </script>
+
+<style scoped>
+.input-dark {
+  @apply w-full bg-black border border-gray-700 text-white px-4 py-3 rounded-xl focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none transition placeholder-gray-600;
+}
+</style>

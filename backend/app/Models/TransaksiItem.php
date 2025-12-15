@@ -23,6 +23,11 @@ class TransaksiItem extends Model
 
     public function transaksi()
     {
-        return $this->belongsTo(Transaksi::class);
+        return $this->belongsTo(Transaksi::class, 'transaksi_id');
+    }
+
+    public function alat()
+    {
+        return $this->belongsTo(AlatBand::class, 'alat_id');
     }
 }

@@ -12,7 +12,7 @@
               <th class="px-6 py-4">Total</th>
               <th class="px-6 py-4">Status</th>
               <th class="px-6 py-4">Pembayaran</th>
-              <th class="px-6 py-4 text-right">Aksi</th>
+              <th class="px-6 py-4 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-800">
@@ -41,24 +41,37 @@
 
               <td class="px-6 py-4 text-xs font-bold">
                 <span v-if="trx.snap_token" class="text-green-500 flex items-center gap-1">
-                  <i class="fas fa-bolt"></i> Midtrans
+                  Midtrans
                 </span>
                 <span v-else class="text-gray-500 flex items-center gap-1">
-                  <i class="fas fa-hand-holding-usd"></i> Manual
+                  Manual
                 </span>
               </td>
 
-              <td class="px-6 py-4 text-right">
-                <select 
-                  @change="updateStatus(trx.id, $event.target.value)" 
-                  class="bg-black border border-gray-700 text-white text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer"
-                  :value="trx.status"
-                >
-                  <option value="pending">⏳ Pending</option>
-                  <option value="success">✅ Success</option>
-                  <option value="failed">❌ Failed</option>
-                  <option value="cancelled">🚫 Cancelled</option>
-                </select>
+              <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  
+                  <select 
+                    @change="updateStatus(trx.id, $event.target.value)" 
+                    class="bg-black border border-gray-700 text-white text-xs px-2 py-2 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer"
+                    :value="trx.status"
+                  >
+                    <option value="pending">⏳ Pending</option>
+                    <option value="success">✅ Success</option>
+                    <option value="failed">❌ Failed</option>
+                    <option value="cancelled">🚫 Cancelled</option>
+                  </select>
+
+                  <router-link 
+                    :to="{ name: 'admin.transaksi.invoice', params: { kode: trx.kode_transaksi } }" 
+                    target="_blank"
+                    class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition shadow-lg flex items-center gap-1 text-xs font-bold"
+                    title="Cetak Kwitansi"
+                  >
+                    🖨️
+                  </router-link>
+
+                </div>
               </td>
             </tr>
           </tbody>
@@ -82,19 +95,16 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-// Inisialisasi sebagai array kosong agar tidak error .length
 const transactions = ref([]);
 const loading = ref(true);
 
-// Helper Warna Status
 const statusBadge = (status) => {
-  if (status === 'success' || status === 'settlement') return 'bg-green-500/10 text-green-500 border border-green-500/20';
+  if (['success', 'paid', 'settlement'].includes(status)) return 'bg-green-500/10 text-green-500 border border-green-500/20';
   if (status === 'pending') return 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20';
-  if (status === 'failed' || status === 'cancelled' || status === 'expired') return 'bg-red-500/10 text-red-500 border border-red-500/20';
+  if (['failed', 'cancelled', 'expired'].includes(status)) return 'bg-red-500/10 text-red-500 border border-red-500/20';
   return 'bg-gray-500/10 text-gray-500 border border-gray-500/20';
 };
 
-// 1. Ambil Data Transaksi
 const getTransactions = async () => {
   loading.value = true;
   try {
@@ -102,43 +112,35 @@ const getTransactions = async () => {
     const res = await axios.get('/api/admin/transaksi', {
         headers: { Authorization: `Bearer ${token}` }
     }); 
-    
-    // PERBAIKAN UTAMA: Menggunakan res.data langsung (karena Controller kirim Array)
-    // Dan pakai operator OR (|| []) untuk jaga-jaga kalau null
     transactions.value = res.data || []; 
-    
   } catch (e) {
     console.error("Gagal load transaksi:", e);
-    // Pastikan tetap array kosong kalau error, biar tampilan ga crash
     transactions.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-// 2. Update Status Transaksi
 const updateStatus = async (id, newStatus) => {
   try {
     const token = localStorage.getItem('admin_token');
-    
     await axios.patch(`/api/admin/transaksi/${id}/status`, 
         { status: newStatus }, 
         { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    // Toast Notif Sukses
     const Toast = Swal.mixin({
       toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
       background: '#151515', color: '#fff', iconColor: '#22c55e'
     });
-    Toast.fire({ icon: 'success', title: 'Status berhasil diperbarui!' });
+    Toast.fire({ icon: 'success', title: 'Status diperbarui!' });
     
-    getTransactions(); // Refresh data tabel agar sinkron
+    getTransactions(); 
   } catch (e) {
     Swal.fire({
         icon: 'error', 
         title: 'Gagal', 
-        text: 'Tidak bisa mengubah status', 
+        text: 'Gagal update status', 
         background: '#111', color: '#fff'
     });
   }

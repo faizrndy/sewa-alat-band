@@ -21,4 +21,14 @@ class AlatBand extends Model
         'gambar',
         'status',
     ];
+
+    /**
+     * Relasi ke Detail Transaksi (Item)
+     * PENTING: Fungsi ini wajib ada agar Controller bisa menghitung stok terpakai.
+     */
+    public function transaksiItems()
+    {
+        // Satu Alat bisa ada di banyak Transaksi Item
+        return $this->hasMany(TransaksiItem::class, 'alat_id');
+    }
 }

@@ -16,43 +16,56 @@ class TransaksiController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. Validasi input
+        // 1. Validasi Input
         $request->validate([
             'nama' => 'required|string|max:255',
-            'telepon' => 'required|string|max:20',
+            'telepon' => 'required|string',
             'alamat' => 'required|string',
-            'deskripsi_lokasi' => 'nullable|string',
-            'lat' => 'required|numeric',
-            'lon' => 'required|numeric',
-            'jarak_km' => 'required|numeric',
             'metode_pengiriman' => 'required|in:ambil,antar',
-            'tarif_antar' => 'required|integer',
-            'total_sewa' => 'required|integer',
-            'total_bayar' => 'required|integer',
+            'total_bayar' => 'required|numeric',
+            'items' => 'required', // JSON String
             'identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:4096',
-            'items' => 'required',
+            
+            // 🔥 VALIDASI TANGGAL WAJIB ADA
+            'tgl_mulai' => 'required|date',
+            'tgl_selesai' => 'required|date',
         ]);
 
-        // 2. Decode items & Validasi
-        $items = json_decode($request->items, true);
-        if (!$items || !is_array($items) || count($items) === 0) {
-            return response()->json(['success' => false, 'message' => 'List item tidak valid'], 422);
-        }
+        DB::beginTransaction(); // Pakai Transaction biar aman
 
         try {
-            // 3. Upload identitas
-            $identitasPath = $request->file('identitas')->store('identitas', 'public');
+            // 2. Upload Identitas
+            $identitasPath = null;
+            if ($request->hasFile('identitas')) {
+                $file = $request->file('identitas');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('identitas'), $filename);
+                $identitasPath = 'identitas/' . $filename;
+            }
 
-            // 4. Generate Kode Transaksi Unik
+            // 3. Generate Kode TRX
             $kodeTransaksi = 'TRX-' . strtoupper(substr(uniqid(), -6));
 
-            // 5. Simpan transaksi ke Database
+            // 4. Hitung Lama Sewa (Backend Side Calculation)
+            $start = new \DateTime($request->tgl_mulai);
+            $end = new \DateTime($request->tgl_selesai);
+            $diff = $start->diff($end);
+            $lamaHari = $diff->days;
+            if ($lamaHari < 1) $lamaHari = 1; // Minimal 1 hari
+
+            // 5. SIMPAN KE DATABASE (BAGIAN PENTING)
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
                 'nama' => $request->nama,
                 'telepon' => $request->telepon,
                 'alamat' => $request->alamat ?? '-',
                 'deskripsi_lokasi' => $request->deskripsi_lokasi ?? '-',
+                
+                // 🔥 INI YANG KEMARIN LUPA DISIMPAN
+                'tgl_mulai' => $request->tgl_mulai,     
+                'tgl_selesai' => $request->tgl_selesai, 
+                'lama_hari' => $lamaHari,               
+
                 'lat' => $request->lat ?? 0,
                 'lon' => $request->lon ?? 0,
                 'jarak_km' => $request->jarak_km ?? 0,
@@ -61,39 +74,37 @@ class TransaksiController extends Controller
                 'total_sewa' => $request->total_sewa,
                 'total_bayar' => $request->total_bayar,
                 'identitas' => $identitasPath,
-                'bukti_bayar' => null,
-                'status' => 'pending',
+                'status' => 'pending', // Default Pending
             ]);
 
-            // 6. Simpan detail item transaksi
+            // 6. Simpan Detail Barang
+            $items = json_decode($request->items, true);
             foreach ($items as $item) {
-                $mulai = new \DateTime($item['tanggalMulai']);
-                $selesai = new \DateTime($item['tanggalSelesai']);
-                $lama = $mulai->diff($selesai)->days;
-                if ($lama < 1) $lama = 1;
+                // Pastikan qty terisi
+                $qty = isset($item['qty']) ? $item['qty'] : (isset($item['jumlah']) ? $item['jumlah'] : 1);
+                
+                $subtotal = $item['harga_sewa'] * $qty * $lamaHari;
 
-                $subtotal = $lama * $item['harga_sewa'] * $item['jumlah'];
-
-                TransaksiItem::create([
+                \App\Models\TransaksiItem::create([
                     'transaksi_id' => $transaksi->id,
                     'alat_id' => $item['id'],
                     'nama_alat' => $item['nama_alat'],
                     'harga_sewa' => $item['harga_sewa'],
-                    'jumlah' => $item['jumlah'],
-                    'tanggal_mulai' => $item['tanggalMulai'],
-                    'tanggal_selesai' => $item['tanggalSelesai'],
-                    'lama_hari' => $lama,
+                    'jumlah' => $qty,
                     'subtotal' => $subtotal,
+                    // Simpan tanggal di detail juga (opsional, tapi bagus buat history)
+                    'tanggal_mulai' => $request->tgl_mulai,
+                    'tanggal_selesai' => $request->tgl_selesai,
+                    'lama_hari' => $lamaHari,
                 ]);
             }
 
-            // 7. KONFIGURASI MIDTRANS
+            // 7. Config Midtrans & Snap Token
             Config::$serverKey = env('MIDTRANS_SERVER_KEY');
             Config::$isProduction = (bool) env('MIDTRANS_IS_PRODUCTION', false);
             Config::$isSanitized = true;
             Config::$is3ds = true;
 
-            // 8. Parameter untuk Midtrans
             $midtransParams = [
                 "transaction_details" => [
                     "order_id" => $kodeTransaksi,
@@ -102,106 +113,69 @@ class TransaksiController extends Controller
                 "customer_details" => [
                     "first_name" => $transaksi->nama,
                     "phone" => $transaksi->telepon,
-                    "billing_address" => [
-                        "address" => $transaksi->alamat,
-                    ],
                 ],
             ];
 
-            // 9. Minta Snap Token ke Midtrans
             $snapToken = Snap::getSnapToken($midtransParams);
-
-            // 10. UPDATE DATABASE: Simpan Snap Token
             $transaksi->update(['snap_token' => $snapToken]);
 
-            // 11. Response Sukses
+            DB::commit();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi berhasil dibuat!',
+                'message' => 'Transaksi berhasil',
                 'snap_token' => $snapToken,
-                'kode_transaksi' => $kodeTransaksi,
-                'data' => $transaksi->load('items'),
+                'kode_transaksi' => $kodeTransaksi
             ]);
 
         } catch (\Throwable $e) {
-            // Log error biar gampang debugging
-            Log::error('Error Transaksi Store: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses transaksi: ' . $e->getMessage(),
-            ], 500);
+            DB::rollBack();
+            Log::error('Gagal Transaksi: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-    }
-
-    /**
-     * Cek ketersediaan alat berdasarkan tanggal dan ID alat.
-     * URL: POST /api/alat-band/check-availability
-     */
-    public function checkAvailability(Request $request)
-    {
-        // 1. Validasi input
-        $request->validate([
-            'alat_id' => 'required|integer|exists:alat_bands,id',
-            'tanggal_mulai' => 'required|date|after_or_equal:today',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
-            'jumlah_diminta' => 'required|integer|min:1',
-        ]);
-
-        $alatId = $request->alat_id;
-        $tanggalMulai = $request->tanggal_mulai;
-        $tanggalSelesai = $request->tanggal_selesai;
-        $jumlahDiminta = $request->jumlah_diminta;
-
-        // 2. Cek apakah ada transaksi yang bentrok
-        $conflictingItems = DB::table('transaksi_items')
-            ->join('transaksis', 'transaksi_items.transaksi_id', '=', 'transaksis.id')
-            ->where('transaksi_items.alat_id', $alatId)
-            ->whereIn('transaksis.status', ['pending', 'paid']) // Hanya cek transaksi aktif
-            ->where(function ($query) use ($tanggalMulai, $tanggalSelesai) {
-                $query->whereBetween('transaksi_items.tanggal_mulai', [$tanggalMulai, $tanggalSelesai])
-                      ->orWhereBetween('transaksi_items.tanggal_selesai', [$tanggalMulai, $tanggalSelesai])
-                      ->orWhere(function ($q) use ($tanggalMulai, $tanggalSelesai) {
-                          $q->where('transaksi_items.tanggal_mulai', '<=', $tanggalMulai)
-                            ->where('transaksi_items.tanggal_selesai', '>=', $tanggalSelesai);
-                      });
-            })
-            ->selectRaw('SUM(transaksi_items.jumlah) as total_dipesan')
-            ->first();
-
-        $totalDipesan = $conflictingItems->total_dipesan ?? 0;
-
-        // 3. Ambil total stok alat
-        $alat = \App\Models\AlatBand::select('stok')->where('id', $alatId)->firstOrFail();
-        $totalStok = $alat->stok;
-
-        // 4. Hitung apakah stok cukup
-        $totalSetelahBooking = $totalDipesan + $jumlahDiminta;
-
-        if ($totalSetelahBooking > $totalStok) {
-            return response()->json([
-                'available' => false,
-                'message' => "Stok tidak mencukupi. Tersedia: " . ($totalStok - $totalDipesan) . " unit."
-            ], 409); // 409 Conflict
-        }
-
-        return response()->json([
-            'available' => true,
-            'message' => 'Alat tersedia.',
-            'stok_tersedia' => $totalStok - $totalDipesan
-        ]);
     }
 
     public function riwayat($telepon)
     {
         $transaksi = Transaksi::where('telepon', $telepon)
             ->orderBy('created_at', 'DESC')
-            ->with('items')
+            ->with('items') // Pastikan relasi di model Transaksi namanya 'items' (hasMany TransaksiItem)
             ->get();
 
         return response()->json([
             'success' => true,
             'data' => $transaksi,
+        ]);
+    }
+
+    // Tambahkan method ini
+    public function history(Request $request)
+    {
+        // 1. Ambil User yang sedang login dari Token
+        $user = $request->user();
+
+        // 2. Cari Transaksi berdasarkan No. Telepon User
+        // Asumsi: Di tabel users kolomnya 'nomor_telepon' atau 'telepon'
+        // Sesuaikan dengan nama kolom di database user kamu
+        $userPhone = $user->nomor_telepon ?? $user->telepon; 
+
+        if (!$userPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Profil Anda belum ada nomor telepon.',
+                'data' => []
+            ]);
+        }
+
+        // 3. Query ke database
+        $transaksi = Transaksi::with('items.alat') // <--- Load relasi bersarang (Items -> Alat)
+        ->where('telepon', $userPhone)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $transaksi
         ]);
     }
 }
