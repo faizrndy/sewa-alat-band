@@ -17,86 +17,96 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC API (Bisa diakses tanpa login)
+| 1. PUBLIC API (Open Access)
 |--------------------------------------------------------------------------
+| Route ini boleh diakses oleh siapa saja (Tamu/Guest).
+| Tidak ada resiko keamanan fatal di sini karena hanya data bacaan (GET).
 */
 
-// Booking Availability
+// Cek Ketersediaan & Katalog
 Route::post('/alat-band/check-availability', [TransaksiController::class, 'checkAvailability']);
 Route::get('/alat-check', [AlatBandController::class, 'searchAvailable']);
 
-// ALAT BAND (Katalog Public)
 Route::get('/alat-band', [AlatBandController::class, 'apiIndex']);
 Route::get('/alat-band/{id}', [AlatBandController::class, 'apiShow']);
 Route::get('/alat-band-public', [AlatBandController::class, 'apiIndex']);
 Route::get('/alat-band-public/{id}', [AlatBandController::class, 'apiShow']);
 
-// Review & FAQ
+// Info Umum
 Route::get('/reviews', fn() => Review::latest()->get());
 Route::get('/faqs', fn() => Faq::all());
 Route::get('/ping', fn() => response()->json(['message' => 'API aktif!']));
 
 /*
 |--------------------------------------------------------------------------
-| AUTH (REGISTER + OTP + LOGIN)
+| 2. AUTHENTICATION (Pintu Gerbang)
 |--------------------------------------------------------------------------
 */
 
-// Kirim OTP
 Route::post('/register/send-otp', [AuthController::class, 'sendOtp']);
-
-// Auth Actions
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+
+// Security: Rate Limiting (Mencegah Brute Force Attack)
 Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:5,1'); // Limit login salah max 5x
+    ->middleware('throttle:5,1'); 
 
 /*
 |--------------------------------------------------------------------------
-| MIDTRANS (Callback Pembayaran)
+| 3. MIDTRANS CALLBACK (Wajib Public)
 |--------------------------------------------------------------------------
+| Webhook ini dipanggil oleh Server Midtrans, bukan User. 
+| Jadi tidak boleh dikunci auth, tapi harus divalidasi signature-nya di Controller.
 */
 Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
-Route::post('/midtrans/create-transaction', [MidtransController::class, 'createTransaction']);
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES (Harus Login)
+| 4. PROTECTED ROUTES (RBAC IMPLEMENTATION)
 |--------------------------------------------------------------------------
+| Di sini penerapan keamanan RBAC dimulai.
+| Lapis 1: auth:sanctum -> Harus Login (Punya Token)
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ==========================================
-    // 👤 ROUTE CUSTOMER (Login User Biasa)
-    // ==========================================
+    // ====================================================
+    // 👤 ROLE: AUTHENTICATED USER (CUSTOMER)
+    // ====================================================
     
-    // Transaksi & Riwayat
+    // Perbaikan Keamanan: Create Transaction pindah ke sini!
+    // Hanya user login yang boleh membuat tagihan pembayaran.
+    Route::post('/midtrans/create-transaction', [MidtransController::class, 'createTransaction']);
+    
+    // Transaksi Database
     Route::post('/transaksi', [TransaksiController::class, 'store']);
     Route::get('/buyer/history', [TransaksiController::class, 'history']);
     Route::get('/riwayat/{telepon}', [TransaksiController::class, 'riwayat']);
 
-    // Profile & Logout
+    // Profile Management
     Route::get('/buyer/profile', [AuthController::class, 'profile']);
     Route::put('/buyer/update', [AuthController::class, 'updateProfile']);
     Route::post('/buyer/logout', [AuthController::class, 'logout']);
 
 
-    // ==========================================
-    // 🛡️ ROUTE ADMIN (Double Proteksi: Login + Middleware Admin)
-    // ==========================================
+    // ====================================================
+    // 🛡️ ROLE: ADMINISTRATOR (RBAC LEVEL 2)
+    // ====================================================
+    // Lapis 2: middleware('admin') -> Cek kolom 'role' di database
+    // Jika user login tapi role != 'admin', akses ditolak (403 Forbidden).
     Route::middleware('admin')->group(function () {
         
-        // Dashboard
+        // Dashboard Statistik
         Route::get('/admin/dashboard', [DashboardController::class, 'index']);
 
-        // Kelola Transaksi Admin
+        // Monitoring Transaksi
         Route::get('/admin/transaksi', [AdminTransaksiController::class, 'index']);
         Route::get('/admin/transaksi/{kode}', [AdminTransaksiController::class, 'show']); 
         Route::patch('/admin/transaksi/{id}/status', [AdminTransaksiController::class, 'updateStatus']);
 
-        // CRUD Alat Band (Hanya Admin yang boleh tambah/edit/hapus)
+        // Manajemen Aset (CRUD Alat)
+        // Keamanan: Hanya admin yang berhak mengubah data master
         Route::post('/alat-band', [AlatBandController::class, 'store']);
-        Route::post('/alat-band/{id}', [AlatBandController::class, 'update']);
+        Route::post('/alat-band/{id}', [AlatBandController::class, 'update']); // Pakai POST untuk handle file upload
         Route::delete('/alat-band/{id}', [AlatBandController::class, 'destroy']);
     });
 
