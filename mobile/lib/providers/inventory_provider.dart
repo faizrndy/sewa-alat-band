@@ -3,38 +3,38 @@ import '../models/alat_band.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 
-/// Provider untuk mengelola state inventory/alat musik
-/// Menangani CRUD operations, search, dan filter
+/// Provider buat handle semua data alat musik
+/// CRUD, search, filter, dll. Semua logic bisnis ada di sini
 class InventoryProvider with ChangeNotifier {
-  // Dependency injection untuk authentication
+  // Butuh AuthProvider karena semua API butuh token
   AuthProvider? _authProvider;
 
-  // Private state variables
-  List<AlatBand> _alatList = [];        // List semua alat musik
-  bool _isLoading = false;              // Status loading
-  String? _error;                       // Error message jika ada
-  String _searchQuery = '';             // Query pencarian
-  String? _selectedCategory;            // Kategori yang dipilih untuk filter
+  // State variables - data yang bisa berubah dan update UI
+  List<AlatBand> _alatList = [];        // List semua alat dari server
+  bool _isLoading = false;              // Nunggu API response
+  String? _error;                       // Error message kalau ada masalah
+  String _searchQuery = '';             // Kata kunci pencarian
+  String? _selectedCategory;            // Filter kategori
 
-  // Constructor dengan dependency injection
+  // Constructor - dependency injection biar bisa akses auth provider
   InventoryProvider(this._authProvider);
 
-  /// Update auth provider reference (digunakan oleh ProxyProvider)
+  /// Update referensi auth provider (dipanggil otomatis sama ProxyProvider)
   void updateAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
   }
 
-  /// Helper method untuk menangani error secara konsisten
+  /// Handle error dengan cara yang konsisten
+  /// Ubah error teknis jadi message yang user-friendly
   void _handleError(Object error) {
-    // Extract error message yang lebih user-friendly
     String errorMessage = error.toString();
-    
-    // Hapus prefix "Exception: " jika ada
+
+    // Bersihin prefix "Exception: " kalau ada
     if (errorMessage.startsWith('Exception: ')) {
       errorMessage = errorMessage.substring(11);
     }
-    
-    // Handle error messages yang lebih spesifik
+
+    // Translate error teknis jadi bahasa manusia
     if (errorMessage.contains('Unauthorized') || errorMessage.contains('401')) {
       errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
     } else if (errorMessage.contains('422') || errorMessage.contains('validation')) {
@@ -44,10 +44,10 @@ class InventoryProvider with ChangeNotifier {
     } else if (errorMessage.contains('Network') || errorMessage.contains('Connection')) {
       errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
     }
-    
+
     _error = errorMessage;
     _isLoading = false;
-    notifyListeners();
+    notifyListeners(); // Update UI biar nampil error
   }
 
   /// Helper method untuk set loading state
@@ -56,18 +56,19 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ==================== PUBLIC GETTERS ====================
+  // ==================== GETTERS BUAT DI AKSES DARI UI ====================
 
-  /// List alat musik yang sudah difilter berdasarkan search dan kategori
+  /// List alat yang udah difilter sesuai search dan kategori
+  /// Getter ini yang dipake di UI, bukan _alatList langsung
   List<AlatBand> get alatList => _filteredAlatList;
 
-  /// Status loading untuk operasi async
+  /// Status loading - UI nungguin ini buat tampilin spinner
   bool get isLoading => _isLoading;
 
-  /// Error message jika ada kesalahan
+  /// Error message - kalau ada error, UI tampilin ini
   String? get error => _error;
 
-  /// List kategori alat musik yang tersedia
+  /// List kategori yang bisa dipilih user
   List<String> get categories => [
     'Gitar',
     'Bass',
@@ -86,10 +87,11 @@ class InventoryProvider with ChangeNotifier {
   List<AlatBand> get _filteredAlatList {
     List<AlatBand> filtered = _alatList;
 
-    // Filter berdasarkan search query (nama alat atau kategori)
+    // Filter berdasarkan kata kunci search
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((alat) =>
+        // Cari di nama alat atau kategori
         alat.namaAlat.toLowerCase().contains(query) ||
         alat.kategori.toLowerCase().contains(query)
       ).toList();
@@ -124,24 +126,31 @@ class InventoryProvider with ChangeNotifier {
     _error = null;
 
     try {
+      // Pastikan ada token autentikasi
       final token = _authProvider?.token;
       if (token == null || token.isEmpty) {
         throw UnauthorizedException('Token tidak ditemukan. Silakan login kembali.');
       }
+
+      // Panggil API untuk ambil data
       final response = await ApiService.get('/api/admin/alat-band', token: token);
+
+      // Parse response jadi list of AlatBand
       final data = response is List ? response : response['data'] ?? [];
       _alatList = (data as List).map((json) => AlatBand.fromJson(json)).toList();
-      _setLoading(false);
+
+      _setLoading(false); // Sukses, matikan loading
     } on UnauthorizedException catch (e) {
-      // Auto logout on 401
+      // Kalau token expired, auto logout
       if (_authProvider != null) {
         await _authProvider!.logout();
       }
       _handleError(e);
-      _alatList = [];
+      _alatList = []; // Kosongin list
     } catch (e) {
+      // Error lain (network, server, dll)
       _handleError(e);
-      _alatList = [];
+      _alatList = []; // Kosongin list
     }
   }
 

@@ -3,22 +3,31 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 
-// Custom exception for 401 Unauthorized errors
+// Exception khusus buat error 401 Unauthorized
+
 class UnauthorizedException implements Exception {
   final String message;
   UnauthorizedException(this.message);
-  
+
   @override
   String toString() => message;
 }
 
+// Service buat handle semua HTTP requests ke backend
+// Semua API calls lewat sini biar konsisten
 class ApiService {
+  // Base URL 
   static String? _baseUrl;
+
+  // Timeout 30 detik
   static const Duration _timeout = Duration(seconds: 30);
+
+  // Retry sampai 3 kali kalau gagal (network issues, dll)
   static const int _maxRetries = 3;
 
+  // Getter lazy buat base URL
   static Future<String> get baseUrl async {
-    _baseUrl ??= 'http://127.0.0.1:8000';
+    _baseUrl ??= 'http://127.0.0.1:8000'; // Default localhost
     return _baseUrl!;
   }
 
@@ -29,45 +38,53 @@ class ApiService {
     };
   }
 
-  // Helper method for retry logic
+  // Helper method buat retry logic
+  // Kalau request gagal, coba lagi dengan delay yang makin lama
   static Future<T> _retry<T>(
-    Future<T> Function() operation,
+    Future<T> Function() operation, // Function yang mau di-retry
     int maxRetries,
   ) async {
     int attempts = 0;
+
     while (attempts < maxRetries) {
       try {
-        return await operation();
+        return await operation(); // Coba execute
       } catch (e) {
         attempts++;
+
         if (attempts >= maxRetries) {
-          rethrow;
+          rethrow; // Udah gak ada kesempatan lagi, throw error
         }
-        // Wait before retry (exponential backoff)
+
+        // Tunggu sebelum coba lagi (exponential backoff)
         await Future.delayed(Duration(seconds: attempts * 2));
       }
     }
-    throw Exception('Max retries exceeded');
+
+    throw Exception('Max retries exceeded'); // Seharusnya gak pernah kesini
   }
 
-  // GET request
+  // GET request - buat ambil data dari server
   static Future<Map<String, dynamic>> get(String endpoint, {String? token}) async {
     return _retry(() async {
       try {
         final baseUrlValue = await baseUrl;
+
+        // Setup headers
         final headers = {..._headers};
         if (token != null && token.isNotEmpty) {
-          headers['Authorization'] = 'Bearer $token';
+          headers['Authorization'] = 'Bearer $token'; // Tambah token kalau ada
         }
 
+        // Kirim GET request
         final response = await http.get(
           Uri.parse('$baseUrlValue$endpoint'),
           headers: headers,
-        ).timeout(_timeout);
+        ).timeout(_timeout); // Timeout 30 detik
 
         return _handleResponse(response);
       } on UnauthorizedException {
-        rethrow;
+        rethrow; // Biar caller handle khusus
       } on TimeoutException {
         throw Exception('Connection timeout. Please check your internet connection.');
       } catch (e) {
@@ -80,20 +97,23 @@ class ApiService {
     }, _maxRetries);
   }
 
-  // POST request
+  // POST request - buat kirim data ke server (create/update)
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data, {String? token}) async {
     return _retry(() async {
       try {
         final baseUrlValue = await baseUrl;
+
+        // Setup headers
         final headers = {..._headers};
         if (token != null && token.isNotEmpty) {
           headers['Authorization'] = 'Bearer $token';
         }
 
+        // Kirim POST request dengan data JSON
         final response = await http.post(
           Uri.parse('$baseUrlValue$endpoint'),
           headers: headers,
-          body: json.encode(data),
+          body: json.encode(data), // Encode Map jadi JSON string
         ).timeout(_timeout);
 
         return _handleResponse(response);

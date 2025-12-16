@@ -11,12 +11,18 @@ import 'screens/add_inventory_screen.dart';
 import 'screens/edit_inventory_screen.dart';
 import 'utils/constants.dart';
 
+// Nah ini entry point aplikasi kita
+// Flutter butuh ini biar bisa akses native stuff kayak SharedPreferences
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Matikan debug check biar gak ribet development
   Provider.debugCheckInvalidValueType = null;
+
+  // Ambil SharedPreferences untuk nyimpen data login
   final prefs = await SharedPreferences.getInstance();
 
+  // Jalankan app dengan data preferences
   runApp(MyApp(prefs: prefs));
 }
 
@@ -28,19 +34,27 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+      // Setup semua state management provider di sini
+      // Kayak dependency injection tapi untuk UI state
       providers: [
+        // Provider untuk handle autentikasi user
+        // Bawa SharedPreferences biar bisa nyimpen/ambil token
         ChangeNotifierProvider(
           create: (_) => AuthProvider(prefs),
         ),
+
+        // Provider untuk handle data alat musik
+        // Depend on AuthProvider karena butuh token untuk API calls
         ChangeNotifierProxyProvider<AuthProvider, InventoryProvider>(
-          create: (_) => InventoryProvider(null),
+          create: (_) => InventoryProvider(null), // Buat dulu tanpa auth
           update: (_, authProvider, previous) {
-            // Jika sudah ada instance sebelumnya, update authProvider-nya
+            // Kalau udah ada instance sebelumnya, tinggal update auth-nya
+            // Biar gak bikin instance baru terus menerus
             if (previous != null) {
               previous.updateAuthProvider(authProvider);
-              return previous;
+              return previous; // Pakai yang lama, tinggal update auth
             }
-            // Jika belum ada, buat instance baru
+            // Kalau belum ada, bikin baru dengan auth provider
             return InventoryProvider(authProvider);
           },
         ),
@@ -109,13 +123,18 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
+        // Screen pertama yang muncul, nanti dia yang handle login check
         home: const AuthWrapper(),
+
+        // Setup routing untuk navigasi antar halaman
         routes: {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
-          '/inventory': (context) => const InventoryScreen(),
-          '/add-inventory': (context) => const AddInventoryScreen(),
+          '/inventory': (context) => const InventoryScreen(), // List semua alat
+          '/add-inventory': (context) => const AddInventoryScreen(), // Tambah alat baru
           '/edit-inventory': (context) {
+            // Ambil data alat yang mau diedit dari arguments
+            // Biasanya dikirim dari halaman list saat user tap edit
             final alat = ModalRoute.of(context)!.settings.arguments as dynamic;
             return EditInventoryScreen(alat: alat);
           },
@@ -126,6 +145,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// Widget ini yang handle cek login pertama kali
+// User buka app → cek udah login apa belum → redirect ke screen yang sesuai
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -134,6 +155,7 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
+  // Flag biar gak ngecek auth berkali-kali
   bool _hasCheckedAuth = false;
 
   @override
@@ -142,22 +164,30 @@ class _AuthWrapperState extends State<AuthWrapper> {
     _checkAuth();
   }
 
+  // Cek status login dari SharedPreferences
   Future<void> _checkAuth() async {
-    if (_hasCheckedAuth) return; // Prevent duplicate checks
+    // Kalau udah pernah cek, skip aja
+    if (_hasCheckedAuth) return;
 
     _hasCheckedAuth = true;
+
+    // Ambil auth provider tanpa listen (karena ini cuma sekali)
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Cek ada token yang valid apa gak
     await authProvider.checkAuthStatus();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen ke AuthProvider biar tahu kapan status login berubah
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Show loading only during initial auth check
+        // Selama lagi loading atau belum selesai cek auth, tampilin loading
         if (!_hasCheckedAuth || authProvider.isLoading) {
           return Scaffold(
             body: Container(
+              // Background gradient biar cantik
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -192,10 +222,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
+        // Kalau udah login, langsung ke halaman inventory
         if (authProvider.isAuthenticated) {
           return const InventoryScreen();
         }
 
+        // Kalau belum login, ke halaman login
         return const LoginScreen();
       },
     );
